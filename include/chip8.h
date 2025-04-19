@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <array>
 #include "screen.h"
 #include "buzzer.h"
 
@@ -25,6 +26,7 @@ class Chip8 {
     Byte key[16];
     Word I;
     Word opcode;
+    std::array<void (Chip8::*)(), 16> opcodeTable;
 
     // Display
     Byte display[DISPLAY_WIDTH * DISPLAY_HEIGHT];
@@ -49,24 +51,25 @@ class Chip8 {
     void tick();
     void emulateCycle();
     void processInput();
+    void op0xxx();
+    void op1xxx();
+    void op2xxx();
+    void op3xxx();
+    void op4xxx();
+    void op5xxx();
+    void op6xxx();
+    void op7xxx();
+    void op8xxx();
+    void op9xxx();
+    void opAxxx();
+    void opBxxx();
+    void opCxxx();
+    void opDxxx();
+    void opExxx();
+    void opFxxx();
 
     // Friends
-    friend void op0xxx(Chip8*);
-    friend void op1xxx(Chip8*);
-    friend void op2xxx(Chip8*);
-    friend void op3xxx(Chip8*);
-    friend void op4xxx(Chip8*);
-    friend void op5xxx(Chip8*);
-    friend void op6xxx(Chip8*);
-    friend void op7xxx(Chip8*);
-    friend void op8xxx(Chip8*);
-    friend void op9xxx(Chip8*);
-    friend void opAxxx(Chip8*);
-    friend void opBxxx(Chip8*);
-    friend void opCxxx(Chip8*);
-    friend void opDxxx(Chip8*);
-    friend void opExxx(Chip8*);
-    friend void opFxxx(Chip8*);
+    friend Screen;
 
   public:
     Chip8(Byte instructionFrequency, Byte debugFlag);

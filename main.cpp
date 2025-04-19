@@ -5,7 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Ensure that imgui was included correctly with test screens
+// TODO: Dock Space
 // TODO: imgui debugger
 // TODO: Implement delete functions for Chip8, Screen
 

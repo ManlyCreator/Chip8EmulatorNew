@@ -30,21 +30,17 @@ FetchContent_Declare(
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG        v1.90.4
+  GIT_TAG        docking
 )
 FetchContent_MakeAvailable(imgui)
 add_library(imgui 
   ${imgui_SOURCE_DIR}/imgui.cpp
+  ${imgui_SOURCE_DIR}/imgui_demo.cpp
   ${imgui_SOURCE_DIR}/imgui_draw.cpp
   ${imgui_SOURCE_DIR}/imgui_tables.cpp
   ${imgui_SOURCE_DIR}/imgui_widgets.cpp
   ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
   ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-)
-target_include_directories(imgui PUBLIC
-  ${imgui_SOURCE_DIR}
-  ${imgui_SOURCE_DIR}/include/
-  ${imgui_SOURCE_DIR}/backends/
 )
 target_link_libraries(imgui PRIVATE glfw)
 
@@ -52,13 +48,17 @@ target_link_libraries(imgui PRIVATE glfw)
 FetchContent_MakeAvailable(openal-soft glfw)
 
 # Local Libraries
-include_directories(include/)
+include_directories(
+  include/ 
+  ${imgui_SOURCE_DIR}
+  ${imgui_SOURCE_DIR}/include/
+  ${imgui_SOURCE_DIR}/backends/
+)
 
 add_library(Chip8   STATIC src/chip8.cpp)
 add_library(Shader  STATIC src/shader.cpp)
 add_library(Screen  STATIC src/screen.cpp)
 add_library(Buzzer  STATIC src/buzzer.cpp)
-add_library(Opcodes STATIC src/opcodes.cpp)
 add_library(glad    STATIC src/glad.c)
 
 # Compiles OpenGL dependencies to Screen
@@ -66,4 +66,4 @@ target_link_libraries(Screen PRIVATE glad glfw GL imgui m Shader)
 # Compiles OpenAL dependencies to Buzzer
 target_link_libraries(Buzzer PRIVATE openal m)
 # Compiles all Chip8 components to the main project
-target_link_libraries(${PROJECT_NAME} PRIVATE Chip8 Screen Buzzer Opcodes)
+target_link_libraries(${PROJECT_NAME} PRIVATE Chip8 Screen Buzzer)
