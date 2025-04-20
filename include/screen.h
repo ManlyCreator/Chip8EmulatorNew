@@ -2,6 +2,7 @@
 #define SCREEN_H
 
 #include <memory>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -23,16 +24,19 @@ class Screen {
     GLuint FBO;
     GLuint RBO;
     GLuint FBOtexture;
+    std::vector<unsigned char> *textureData;
     std::unique_ptr<Shader> shader;
+    Chip8 *chip8;
 
-    void debugger(Chip8 *chip8);
+    void debugger();
+    void updateTextureData();
 
   public:
     GLFWwindow *window;
 
-    Screen(const char *vsPath, const char *fsPath, unsigned texWidth, unsigned texHeight, unsigned char *texData);
+    Screen(const char *vsPath, const char *fsPath, Chip8 *chip8);
     ~Screen();
-    void draw(Chip8 *chip8);
+    void draw();
 };
 
 #endif

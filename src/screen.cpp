@@ -4,11 +4,13 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 
-Screen::Screen(const char *vsPath, const char *fsPath, unsigned texWidth, unsigned texHeight, unsigned char *texData) {
+Screen::Screen(const char *vsPath, const char *fsPath, Chip8 *chip8) {
   GLuint VBO;
   float plane[] = {
     // Vertices   // Texture Coordinates
@@ -20,6 +22,8 @@ Screen::Screen(const char *vsPath, const char *fsPath, unsigned texWidth, unsign
      1.0f, -1.0f, 1.0f, 0.0f,
      1.0f,  1.0f, 1.0f, 1.0f
   };
+  this->chip8 = chip8;
+  textureData = new std::vector<unsigned char>(DISPLAY_WIDTH * DISPLAY_HEIGHT * 4);
 
   // GLFW
   glfwInit();
@@ -51,8 +55,9 @@ Screen::Screen(const char *vsPath, const char *fsPath, unsigned texWidth, unsign
   // Texture
   glGenTextures(1, &texture);
   glActiveTexture(GL_TEXTURE0);
+  updateTextureData();
   glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, texWidth, texHeight, 0, GL_RED, GL_UNSIGNED_BYTE, texData);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData->data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -95,7 +100,7 @@ Screen::Screen(const char *vsPath, const char *fsPath, unsigned texWidth, unsign
   ImGui_ImplOpenGL3_Init();
 }
 
-void Screen::draw(Chip8 *chip8) {
+void Screen::draw() {
   glfwPollEvents();
 
   /*ImGui_ImplOpenGL3_NewFrame();*/
@@ -113,8 +118,11 @@ void Screen::draw(Chip8 *chip8) {
   glBindVertexArray(VAO);
   shader->use();
   shader->setInt("texSample", 0);
+  updateTextureData();
   glBindTexture(GL_TEXTURE_2D, texture);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RED, GL_UNSIGNED_BYTE, chip8->display);
+  std::cout << "Assigning Texture\n";
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, textureData->data());
+  std::cout << "Assigned Texture\n";
   glDrawArrays(GL_TRIANGLES, 0, 6);
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) std::cout << "GL Error: " << err << "\n";
@@ -124,7 +132,7 @@ void Screen::draw(Chip8 *chip8) {
   glViewport(0, 0, WIDTH, HEIGHT);
   glClear(GL_COLOR_BUFFER_BIT);
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  debugger(chip8);
+  debugger();
 
   // ImGui Render
   ImGui::Render();
@@ -134,7 +142,17 @@ void Screen::draw(Chip8 *chip8) {
   glfwSwapBuffers(window);
 }
 
-void Screen::debugger(Chip8 *chip8) {
+void Screen::updateTextureData() {
+  std::cout << "Updating Texture\n";
+  for (unsigned int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
+    (*textureData)[i * 4] = chip8->display[i];
+    (*textureData)[i * 4 + 1] = chip8->display[i];
+    (*textureData)[i * 4 + 2] = chip8->display[i];
+    (*textureData)[i * 4 + 3] = 255;
+  }
+}
+
+void Screen::debugger() {
   int freq = static_cast<int>(chip8->instructionFrequency);
 
   ImGui::Begin("Debugger");
@@ -156,6 +174,7 @@ void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
 }
 
 Screen::~Screen() {
+  delete textureData;
   glDeleteFramebuffers(1, &FBO);
   glDeleteVertexArrays(1, &VAO);
   glDeleteShader(shader->getID());

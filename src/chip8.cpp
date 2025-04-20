@@ -80,7 +80,7 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
     memory[i] = fontset[i];
   }
   std::fill(display, display + (DISPLAY_WIDTH * DISPLAY_HEIGHT), 0);
-  screen = std::make_unique<Screen>("../vertexShader.glsl", "../fragmentShader.glsl", DISPLAY_WIDTH, DISPLAY_HEIGHT, display);
+  screen = std::make_unique<Screen>("../vertexShader.glsl", "../fragmentShader.glsl", this);
   buzzer = std::make_unique<Buzzer>();
 }
 
@@ -133,7 +133,7 @@ void Chip8::startMainLoop() {
     delayTimer = delayTimer > 0 ? delayTimer - 1 : 0;
     elapsedTime = 0;
 
-    screen->draw(this);
+    screen->draw();
   }
 }
 
