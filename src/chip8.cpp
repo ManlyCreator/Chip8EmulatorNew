@@ -51,6 +51,10 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   sp = 0;
   delayTimer = 0;
   soundTimer = 0;
+  lastTime = 0;
+  currentTime = 0;
+  elapsedTime = 0;
+  deltaTime = 0;
   opcode = 0;
   opcodeTable = {
     &Chip8::op0xxx,
@@ -105,7 +109,6 @@ int Chip8::loadROM(const char *romPath) {
 }
 
 void Chip8::startMainLoop() {
-  float lastTime, currentTime, elapsedTime, deltaTime = 0;
   Byte soundPlaying = 0;
   while (!glfwWindowShouldClose(screen->window)) {
     currentTime = glfwGetTime();
@@ -352,8 +355,8 @@ void Chip8::opDxxx() {
   for (int i = 0; i < height; i++) {
     spriteRow = memory[I + i];
     for (int j = 0; j < 8; j++) {
-      unsigned index = V[x] + j + ((DISPLAY_HEIGHT - 1 - (V[y] + i)) * DISPLAY_WIDTH);
-      Byte pixel = (spriteRow & (0x80 >> j)) > 0 ? 1 : 0;
+      unsigned index = V[x] + j + ((V[y] + i) * DISPLAY_WIDTH);
+      Byte pixel = (spriteRow & (0x80 >> j)) > 0 ? 255 : 0;
       if (display[index] == 1)
         V[0xF] = 1;
       display[index] ^= pixel;

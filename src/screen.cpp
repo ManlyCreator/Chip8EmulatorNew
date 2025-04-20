@@ -1,8 +1,10 @@
 #include "screen.h"
+#include "GLFW/glfw3.h"
 #include "chip8.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <cstdlib>
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 
@@ -54,6 +56,18 @@ Screen::Screen(const char *vsPath, const char *fsPath, unsigned texWidth, unsign
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+  // Frame Buffer Object
+  glGenFramebuffers(1, &FBO);
+  glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+  // Attaching Texture to FBO
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    std::cout << "Framebuffer creation failed\n";
+    std::exit(EXIT_FAILURE);
+  }
+  glBindTexture(GL_TEXTURE_2D, 0);
+
   // Vertex Array
   glGenVertexArrays(1, &VAO);
   glBindVertexArray(VAO);
@@ -82,35 +96,35 @@ Screen::Screen(const char *vsPath, const char *fsPath, unsigned texWidth, unsign
 }
 
 void Screen::draw(Chip8 *chip8) {
-  int freq = static_cast<int>(chip8->instructionFrequency);
   glfwPollEvents();
-  // ImGui Setup
+
+  /*ImGui_ImplOpenGL3_NewFrame();*/
+  /*ImGui_ImplGlfw_NewFrame();*/
+  /*ImGui::NewFrame();*/
+  /*ImGui::ShowDemoWindow();*/
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
-  ImGui::Begin("Debugger");
-  ImGui::Text("This is some text");
-  ImGui::SliderInt("Instruction Frequency", reinterpret_cast<int*>(&freq), 1, 255);
-  chip8->instructionFrequency = static_cast<Byte>(freq);
-  if (ImGui::BeginMainMenuBar()) {
-    if (ImGui::BeginMenu("File")) {
-      ImGui::EndMenu();
-    }
-    ImGui::EndMainMenuBar();
-  }
-  ImGui::End();
 
-  // Clear Commands
+  // Draw to FBO
+  glBindFramebuffer(GL_FRAMEBUFFER, FBO);
   glClear(GL_COLOR_BUFFER_BIT);
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-  // Draw Commands
+  glViewport(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
   glBindVertexArray(VAO);
   shader->use();
   shader->setInt("texSample", 0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RED, GL_UNSIGNED_BYTE, chip8->display);
   glDrawArrays(GL_TRIANGLES, 0, 6);
+  GLenum err = glGetError();
+  if (err != GL_NO_ERROR) std::cout << "GL Error: " << err << "\n";
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  // Draw
+  glViewport(0, 0, WIDTH, HEIGHT);
+  glClear(GL_COLOR_BUFFER_BIT);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  debugger(chip8);
 
   // ImGui Render
   ImGui::Render();
@@ -120,12 +134,35 @@ void Screen::draw(Chip8 *chip8) {
   glfwSwapBuffers(window);
 }
 
+void Screen::debugger(Chip8 *chip8) {
+  int freq = static_cast<int>(chip8->instructionFrequency);
+
+  ImGui::Begin("Debugger");
+  ImGui::Text("Opcode: 0x%.4x", chip8->opcode);
+  ImGui::SliderInt("Instruction Frequency", reinterpret_cast<int*>(&freq), 1, 255);
+  ImGui::Image(texture, ImVec2(640, 320));
+  chip8->instructionFrequency = static_cast<Byte>(freq);
+  if (ImGui::BeginMainMenuBar()) {
+    if (ImGui::BeginMenu("File")) {
+      ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+  }
+  ImGui::End();
+}
+
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
   glViewport(0, 0, width, height);
 }
 
 Screen::~Screen() {
+  glDeleteFramebuffers(1, &FBO);
+  glDeleteVertexArrays(1, &VAO);
+  glDeleteShader(shader->getID());
+  glDeleteTextures(1, &texture);
   ImGui_ImplOpenGL3_Shutdown();
   ImGui_ImplGlfw_Shutdown();
   ImGui::DestroyContext();
+  glfwDestroyWindow(window);
+  glfwTerminate();
 }

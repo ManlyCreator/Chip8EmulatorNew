@@ -46,6 +46,7 @@ class Chip8 {
     // Timers
     Byte delayTimer;
     Byte soundTimer;
+    float lastTime, currentTime, elapsedTime, deltaTime;
 
     // Functions
     void tick();

@@ -20,7 +20,12 @@ class Screen {
   private:
     GLuint texture;
     GLuint VAO;
+    GLuint FBO;
+    GLuint RBO;
+    GLuint FBOtexture;
     std::unique_ptr<Shader> shader;
+
+    void debugger(Chip8 *chip8);
 
   public:
     GLFWwindow *window;

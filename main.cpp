@@ -5,7 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Dock Space
+// TODO: Convert textures to RGBA to be used by imgui
 // TODO: imgui debugger
 // TODO: Implement delete functions for Chip8, Screen
 
