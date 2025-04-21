@@ -119,7 +119,6 @@ void Chip8::startMainLoop() {
     elapsedTime += deltaTime;
     lastTime = glfwGetTime();
 
-
     // Buzzer Control
     if (soundTimer > 0 && !soundPlaying) {
       buzzer->play();
@@ -130,17 +129,14 @@ void Chip8::startMainLoop() {
       soundPlaying = 0;
     }
     
-    if (iterations > 0 && !paused) {
-      emulateCycle();
-      iterations--;
-    }
-    screen->draw();
     // Display Refresh
     if (elapsedTime < DISPLAY_FREQUENCY) continue;
+    tick();
     iterations = instructionFrequency;
     soundTimer = soundTimer > 0 ? soundTimer - 1 : 0;
     delayTimer = delayTimer > 0 ? delayTimer - 1 : 0;
     elapsedTime = 0;
+    screen->draw();
   }
 }
 

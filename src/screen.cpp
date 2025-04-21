@@ -156,13 +156,20 @@ void Screen::debugger() {
   int screenWidth = WIDTH / 2;
   int screenHeight = HEIGHT / 2;
   ImGui::SetNextWindowPos(ImVec2(WIDTH - screenWidth, 0));
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(100.0f, 0.0f));
   // Window label is ~35 pixels
   ImGui::SetNextWindowSize(ImVec2(screenWidth, screenHeight + 35));
   ImGui::Begin("Screen");
   ImGui::Image(texture, ImVec2(screenWidth, screenHeight));
   ImGui::End();
-  ImGui::PopStyleVar();
+
+  // Pause
+  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+  ImGui::SetNextWindowSize(ImVec2(screenWidth, HEIGHT));
+  ImGui::Begin("Controls");
+  if (ImGui::Button("Pause")) {
+    chip8->paused = !chip8->paused;
+  }
+  ImGui::End();
 }
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
