@@ -5,7 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Dock Space for viewport and logging
+// TODO: Experiment with Instruction Frequency & Display Frequency controls to keep OpenGL rendering separate from Chip8 updates
 // TODO: Pause & Resume execution
 // TODO: Debug Stepping
 // TODO: imgui debugger

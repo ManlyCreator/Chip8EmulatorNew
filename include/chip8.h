@@ -42,6 +42,7 @@ class Chip8 {
     Byte debugFlag;
     Byte instructionFrequency;
     SignedByte keyPressed;
+    bool paused;
 
     // Timers
     Byte delayTimer;

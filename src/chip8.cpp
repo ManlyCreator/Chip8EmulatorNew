@@ -1,5 +1,6 @@
 #include "chip8.h"
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -56,6 +57,7 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   elapsedTime = 0;
   deltaTime = 0;
   opcode = 0;
+  paused = false;
   opcodeTable = {
     &Chip8::op0xxx,
     &Chip8::op1xxx,
@@ -110,11 +112,13 @@ int Chip8::loadROM(const char *romPath) {
 
 void Chip8::startMainLoop() {
   Byte soundPlaying = 0;
+  Byte iterations = 0;
   while (!glfwWindowShouldClose(screen->window)) {
     currentTime = glfwGetTime();
     deltaTime = currentTime - lastTime;
     elapsedTime += deltaTime;
     lastTime = glfwGetTime();
+
 
     // Buzzer Control
     if (soundTimer > 0 && !soundPlaying) {
@@ -126,14 +130,17 @@ void Chip8::startMainLoop() {
       soundPlaying = 0;
     }
     
+    if (iterations > 0 && !paused) {
+      emulateCycle();
+      iterations--;
+    }
+    screen->draw();
     // Display Refresh
     if (elapsedTime < DISPLAY_FREQUENCY) continue;
-    tick();
+    iterations = instructionFrequency;
     soundTimer = soundTimer > 0 ? soundTimer - 1 : 0;
     delayTimer = delayTimer > 0 ? delayTimer - 1 : 0;
     elapsedTime = 0;
-
-    screen->draw();
   }
 }
 
@@ -357,7 +364,7 @@ void Chip8::opDxxx() {
     for (int j = 0; j < 8; j++) {
       unsigned index = V[x] + j + ((V[y] + i) * DISPLAY_WIDTH);
       Byte pixel = (spriteRow & (0x80 >> j)) > 0 ? 255 : 0;
-      if (display[index] == 1)
+      if (display[index] > 0)
         V[0xF] = 1;
       display[index] ^= pixel;
     }

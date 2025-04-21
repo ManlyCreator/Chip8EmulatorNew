@@ -120,9 +120,7 @@ void Screen::draw() {
   shader->setInt("texSample", 0);
   updateTextureData();
   glBindTexture(GL_TEXTURE_2D, texture);
-  std::cout << "Assigning Texture\n";
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, textureData->data());
-  std::cout << "Assigned Texture\n";
   glDrawArrays(GL_TRIANGLES, 0, 6);
   GLenum err = glGetError();
   if (err != GL_NO_ERROR) std::cout << "GL Error: " << err << "\n";
@@ -143,7 +141,6 @@ void Screen::draw() {
 }
 
 void Screen::updateTextureData() {
-  std::cout << "Updating Texture\n";
   for (unsigned int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
     (*textureData)[i * 4] = chip8->display[i];
     (*textureData)[i * 4 + 1] = chip8->display[i];
@@ -155,18 +152,17 @@ void Screen::updateTextureData() {
 void Screen::debugger() {
   int freq = static_cast<int>(chip8->instructionFrequency);
 
-  ImGui::Begin("Debugger");
-  ImGui::Text("Opcode: 0x%.4x", chip8->opcode);
-  ImGui::SliderInt("Instruction Frequency", reinterpret_cast<int*>(&freq), 1, 255);
-  ImGui::Image(texture, ImVec2(640, 320));
-  chip8->instructionFrequency = static_cast<Byte>(freq);
-  if (ImGui::BeginMainMenuBar()) {
-    if (ImGui::BeginMenu("File")) {
-      ImGui::EndMenu();
-    }
-    ImGui::EndMainMenuBar();
-  }
+  // Screen
+  int screenWidth = WIDTH / 2;
+  int screenHeight = HEIGHT / 2;
+  ImGui::SetNextWindowPos(ImVec2(WIDTH - screenWidth, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(100.0f, 0.0f));
+  // Window label is ~35 pixels
+  ImGui::SetNextWindowSize(ImVec2(screenWidth, screenHeight + 35));
+  ImGui::Begin("Screen");
+  ImGui::Image(texture, ImVec2(screenWidth, screenHeight));
   ImGui::End();
+  ImGui::PopStyleVar();
 }
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
