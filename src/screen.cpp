@@ -150,6 +150,7 @@ void Screen::updateTextureData() {
 }
 
 void Screen::debugger() {
+  static bool toggleHex = true;
   int freq = static_cast<int>(chip8->instructionFrequency);
 
   // Screen
@@ -162,12 +163,30 @@ void Screen::debugger() {
   ImGui::Image(texture, ImVec2(screenWidth, screenHeight));
   ImGui::End();
 
-  // Pause
-  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-  ImGui::SetNextWindowSize(ImVec2(screenWidth, HEIGHT));
+  // Controls
+  ImGui::SetNextWindowPos(ImVec2(screenWidth - int(screenWidth / 4), 0.0f));
+  ImGui::SetNextWindowSize(ImVec2(int(screenWidth / 4), screenHeight + 35));
   ImGui::Begin("Controls");
+  if (ImGui::Button("Decimal")) {
+    toggleHex = false;
+  }
+  ImGui::SameLine();
+  if (ImGui::Button("Hex")) {
+    toggleHex = true;
+  }
+  if (toggleHex) {
+    ImGui::Text("PC:     0x%.3X", chip8->pc);
+  } else {
+    ImGui::Text("PC:     %d", chip8->pc);
+  }
+  ImGui::Text("Opcode: 0x%.4X", chip8->opcode);
   if (ImGui::Button("Pause")) {
     chip8->paused = !chip8->paused;
+  }
+  if (ImGui::Button("Step")) {
+    if (chip8->paused) {
+      chip8->emulateCycle();
+    }
   }
   ImGui::End();
 }

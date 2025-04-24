@@ -112,12 +112,12 @@ int Chip8::loadROM(const char *romPath) {
 
 void Chip8::startMainLoop() {
   Byte soundPlaying = 0;
-  Byte iterations = 0;
   while (!glfwWindowShouldClose(screen->window)) {
-    currentTime = glfwGetTime();
-    deltaTime = currentTime - lastTime;
-    elapsedTime += deltaTime;
-    lastTime = glfwGetTime();
+    screen->draw();
+
+    if (paused) continue;
+
+    updateTimers();
 
     // Buzzer Control
     if (soundTimer > 0 && !soundPlaying) {
@@ -132,17 +132,23 @@ void Chip8::startMainLoop() {
     // Display Refresh
     if (elapsedTime < DISPLAY_FREQUENCY) continue;
     tick();
-    iterations = instructionFrequency;
     soundTimer = soundTimer > 0 ? soundTimer - 1 : 0;
     delayTimer = delayTimer > 0 ? delayTimer - 1 : 0;
     elapsedTime = 0;
-    screen->draw();
   }
+}
+
+void Chip8::updateTimers() {
+  currentTime = glfwGetTime();
+  deltaTime = currentTime - lastTime;
+  elapsedTime += deltaTime;
+  lastTime = glfwGetTime();
 }
 
 void Chip8::tick() {
   for (int i = 0; i < instructionFrequency; i++) {
     emulateCycle();
+    updateTimers();
   }
 }
 

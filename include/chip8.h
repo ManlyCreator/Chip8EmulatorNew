@@ -8,8 +8,6 @@
 #include "buzzer.h"
 
 #define MEMORY 4096
-#define DISPLAY_WIDTH 64
-#define DISPLAY_HEIGHT 32
 #define DISPLAY_FREQUENCY (float)1 / 60
 
 #define Byte unsigned char
@@ -53,6 +51,7 @@ class Chip8 {
     void tick();
     void emulateCycle();
     void processInput();
+    void updateTimers();
     void op0xxx();
     void op1xxx();
     void op2xxx();
