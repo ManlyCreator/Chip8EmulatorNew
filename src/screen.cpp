@@ -167,11 +167,11 @@ void Screen::debugger() {
   ImGui::SetNextWindowPos(ImVec2(screenWidth - int(screenWidth / 4), 0.0f));
   ImGui::SetNextWindowSize(ImVec2(int(screenWidth / 4), screenHeight + 35));
   ImGui::Begin("Controls");
-  if (ImGui::Button("Decimal")) {
+  if (ImGui::RadioButton("Decimal", !toggleHex)) {
     toggleHex = false;
-  }
+  } 
   ImGui::SameLine();
-  if (ImGui::Button("Hex")) {
+  if (ImGui::RadioButton("Hex", toggleHex)) {
     toggleHex = true;
   }
   if (toggleHex) {
@@ -185,6 +185,8 @@ void Screen::debugger() {
   }
   if (ImGui::Button("Step")) {
     if (chip8->paused) {
+      chip8->soundTimer = chip8->soundTimer > 0 ? chip8->soundTimer - 1 : 0;
+      chip8->delayTimer = chip8->delayTimer > 0 ? chip8->delayTimer - 1 : 0;
       chip8->emulateCycle();
     }
   }

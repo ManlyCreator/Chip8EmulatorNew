@@ -5,8 +5,8 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Update timers on step
-// TODO: imgui debugger
+// TODO: Display ALL essential Chip8 states in debugger
+// TODO: Attempt to debug current Chip8 issues with debugger
 // TODO: Implement delete functions for Chip8, Screen
 
 int main(int argc, char **argv) {
