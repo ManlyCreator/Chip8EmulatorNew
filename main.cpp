@@ -5,8 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Pause & Resume execution
-// TODO: Debug Stepping
+// TODO: Update timers on step
 // TODO: imgui debugger
 // TODO: Implement delete functions for Chip8, Screen
 
