@@ -150,44 +150,61 @@ void Screen::updateTextureData() {
 }
 
 void Screen::debugger() {
-  static bool toggleHex = true;
+  // Debugger Settings
+  static int steps = 1;
+  static int toggleHex = 1;
   int freq = static_cast<int>(chip8->instructionFrequency);
 
   // Screen
-  int screenWidth = WIDTH / 2;
-  int screenHeight = HEIGHT / 2;
-  ImGui::SetNextWindowPos(ImVec2(WIDTH - screenWidth, 0));
-  // Window label is ~35 pixels
-  ImGui::SetNextWindowSize(ImVec2(screenWidth, screenHeight + 35));
+  static ImVec2 imageSize(int(WIDTH / 2), int(HEIGHT / 2));
+  static ImVec2 screenSize(imageSize.x, imageSize.y + 35);
+  ImGui::SetNextWindowPos(ImVec2(WIDTH - screenSize.x, 0));
+  ImGui::SetNextWindowSize(screenSize);
   ImGui::Begin("Screen");
-  ImGui::Image(texture, ImVec2(screenWidth, screenHeight));
+  ImGui::Image(texture, imageSize);
+  ImGui::End();
+
+  // State
+  static ImVec2 stateSize(int(screenSize.x / 2), screenSize.y);
+  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+  ImGui::SetNextWindowSize(stateSize);
+  ImGui::Begin("State");
+  ImGui::RadioButton("Hex", &toggleHex, 1); ImGui::SameLine();
+  ImGui::RadioButton("Decimal", &toggleHex, 0);
+  if (toggleHex) {
+    ImGui::Text("PC:\t\t0x%.3X", chip8->pc);
+    if (chip8->keyPressed == -1)
+      ImGui::Text("Key:\t\tNONE");
+    else
+      ImGui::Text("Key:\t\t0x%.1X", chip8->keyPressed);
+  } else {
+    ImGui::Text("PC:\t\t%d", chip8->pc);
+    if (chip8->keyPressed == -1)
+      ImGui::Text("Key:\t\tNONE");
+    else
+      ImGui::Text("Key:\t\t%d", chip8->keyPressed);
+  }
+  ImGui::Text("Opcode:\t0x%.4X", chip8->opcode);
   ImGui::End();
 
   // Controls
-  ImGui::SetNextWindowPos(ImVec2(screenWidth - int(screenWidth / 4), 0.0f));
-  ImGui::SetNextWindowSize(ImVec2(int(screenWidth / 4), screenHeight + 35));
+  static ImVec2 controlsSize = stateSize;
+  ImGui::SetNextWindowPos(ImVec2(screenSize.x - controlsSize.x, 0.0f));
+  ImGui::SetNextWindowSize(controlsSize);
   ImGui::Begin("Controls");
-  if (ImGui::RadioButton("Decimal", !toggleHex)) {
-    toggleHex = false;
-  } 
-  ImGui::SameLine();
-  if (ImGui::RadioButton("Hex", toggleHex)) {
-    toggleHex = true;
-  }
-  if (toggleHex) {
-    ImGui::Text("PC:     0x%.3X", chip8->pc);
-  } else {
-    ImGui::Text("PC:     %d", chip8->pc);
-  }
-  ImGui::Text("Opcode: 0x%.4X", chip8->opcode);
+  ImGui::InputInt("Instruction Frequency", &freq);
+  chip8->instructionFrequency = freq;
+  ImGui::InputInt("Step Count", &steps);
   if (ImGui::Button("Pause")) {
     chip8->paused = !chip8->paused;
   }
   if (ImGui::Button("Step")) {
     if (chip8->paused) {
-      chip8->soundTimer = chip8->soundTimer > 0 ? chip8->soundTimer - 1 : 0;
-      chip8->delayTimer = chip8->delayTimer > 0 ? chip8->delayTimer - 1 : 0;
-      chip8->emulateCycle();
+      for (int i = 0; i < steps; i++) {
+        chip8->soundTimer = chip8->soundTimer > 0 ? chip8->soundTimer - 1 : 0;
+        chip8->delayTimer = chip8->delayTimer > 0 ? chip8->delayTimer - 1 : 0;
+        chip8->emulateCycle();
+      }
     }
   }
   ImGui::End();

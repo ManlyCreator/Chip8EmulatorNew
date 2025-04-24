@@ -5,6 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
+// TODO: Format State values as strings before inputting them into ImGui calls
 // TODO: Display ALL essential Chip8 states in debugger
 // TODO: Attempt to debug current Chip8 issues with debugger
 // TODO: Implement delete functions for Chip8, Screen
