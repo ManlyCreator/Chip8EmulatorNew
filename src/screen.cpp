@@ -157,6 +157,7 @@ void Screen::debugger() {
   // Debugger Settings
   static int steps = 1;
   static int toggleHex = 1;
+  static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
   int freq = static_cast<int>(chip8->instructionFrequency);
 
   // Screen
@@ -195,9 +196,8 @@ void Screen::debugger() {
   ImGui::TextUnformatted(keyStream.str().c_str());
   ImGui::TextUnformatted(opcodeStream.str().c_str());
 
-  static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
   ImGui::SeparatorText("V-Registers");
-  if (ImGui::BeginTable("Registers", 2, flags)) {
+  if (ImGui::BeginTable("Registers", 2, tableFlags)) {
     ImGui::TableSetupColumn("Register");
     ImGui::TableSetupColumn("Value");
     ImGui::TableHeadersRow();
@@ -213,19 +213,40 @@ void Screen::debugger() {
     }
     ImGui::EndTable();
   }
-
-  // TODO: Delegate to separate window
-  // TODO: Add a search feature to jump to a specified memory address (consult "Scrolling" in ImGui demo)
-  ImGui::SeparatorText("Memory");
-  if (ImGui::BeginListBox("##Memory")) {
-    for (int i = 0; i < MEMORY; i ++) {
-      ImGui::Text("0x%.4X", i); ImGui::SameLine();
-      ImGui::Text("0x%.2X", chip8->memory[i]);
-    }
-    ImGui::EndListBox();
-  }
-
   ImGui::End();
+
+  // Memory
+  static char address[4] = "";
+  ImVec2 memorySize = ImVec2(screenSize.x, screenSize.y - 70);
+  ImU32 activeColor = ImGui::GetColorU32(ImVec4(0.0f, 0.73f, 1.0f, 0.5f));
+  ImGui::SetNextWindowSize(memorySize);
+  ImGui::SetNextWindowPos(ImVec2(0, HEIGHT - memorySize.y));
+  ImGui::Begin("Memory");
+  ImGui::Text("Jump to Address:"); ImGui::SameLine();
+  ImGui::SetNextItemWidth(100.0f);
+  if (ImGui::InputTextWithHint("##Address", "<0xXXX>", address, 4, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    std::cout << address << "\n";
+  }
+  if (ImGui::BeginTable("Memory", 2, tableFlags)) {
+    ImGui::TableSetupColumn("Address");
+    ImGui::TableSetupColumn("Value");
+    ImGui::TableHeadersRow();
+    for (int i = 0; i < MEMORY; i += 2) {
+      Word word = (chip8->memory[i] << 8) | chip8->memory[i + 1];
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      if (i == chip8-> pc - 1 || i == chip8->pc || i == chip8->pc + 1) // Accounts for ROM's that set the PC to an odd number
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
+      ImGui::Text("0x%.3X", i);
+      ImGui::TableNextColumn();
+      if (i == chip8-> pc - 1 || i == chip8->pc || i == chip8->pc + 1)
+        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
+      ImGui::Text("0x%.4X", word);
+    }
+    ImGui::EndTable();
+  }
+  ImGui::End();
+  ImGuiInputTextCallbackData().Buf;
 
   // Controls
   static ImVec2 controlsSize = stateSize;

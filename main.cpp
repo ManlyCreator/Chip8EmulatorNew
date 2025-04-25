@@ -5,7 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Display ALL essential Chip8 states in debugger
+// TODO: Highlight input address in Memory window
 // TODO: Attempt to debug current Chip8 issues with debugger
 // TODO: Implement delete functions for Chip8, Screen
 
