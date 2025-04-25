@@ -6,7 +6,11 @@
 #include "imgui_impl_opengl3.h"
 #include <cstdio>
 #include <cstdlib>
+#include <ios>
+#include <ostream>
+#include <sstream>
 #include <vector>
+#include <iomanip>
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 
@@ -171,20 +175,56 @@ void Screen::debugger() {
   ImGui::Begin("State");
   ImGui::RadioButton("Hex", &toggleHex, 1); ImGui::SameLine();
   ImGui::RadioButton("Decimal", &toggleHex, 0);
+  std::stringstream opcodeStream, pcStream, keyStream;
+  opcodeStream << "Opcode: 0x" << std::hex << std::uppercase << chip8->opcode;
+  pcStream     << "PC:     ";
+  keyStream    << "Key:    ";
   if (toggleHex) {
-    ImGui::Text("PC:\t\t0x%.3X", chip8->pc);
-    if (chip8->keyPressed == -1)
-      ImGui::Text("Key:\t\tNONE");
-    else
-      ImGui::Text("Key:\t\t0x%.1X", chip8->keyPressed);
-  } else {
-    ImGui::Text("PC:\t\t%d", chip8->pc);
-    if (chip8->keyPressed == -1)
-      ImGui::Text("Key:\t\tNONE");
-    else
-      ImGui::Text("Key:\t\t%d", chip8->keyPressed);
+    pcStream  << "0x" << std::hex << std::uppercase << chip8->pc;
+    keyStream << "0x" << std::hex << std::uppercase << int(chip8->keyPressed);
   }
-  ImGui::Text("Opcode:\t0x%.4X", chip8->opcode);
+  else {
+    pcStream  << chip8->pc;
+    keyStream << int(chip8->keyPressed);
+  }
+  if (chip8->keyPressed == -1) {
+    keyStream.str("Key:    NONE");
+  }
+
+  ImGui::TextUnformatted(pcStream.str().c_str());
+  ImGui::TextUnformatted(keyStream.str().c_str());
+  ImGui::TextUnformatted(opcodeStream.str().c_str());
+
+  static ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
+  ImGui::SeparatorText("V-Registers");
+  if (ImGui::BeginTable("Registers", 2, flags)) {
+    ImGui::TableSetupColumn("Register");
+    ImGui::TableSetupColumn("Value");
+    ImGui::TableHeadersRow();
+    for (int row = 0; row < 16; row ++) {
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      ImGui::Text("V[%.1X]", row);
+      ImGui::TableNextColumn();
+      if (toggleHex)
+        ImGui::Text("0x%.2X", chip8->V[row]);
+      else
+        ImGui::Text("%d", chip8->V[row]);
+    }
+    ImGui::EndTable();
+  }
+
+  // TODO: Delegate to separate window
+  // TODO: Add a search feature to jump to a specified memory address (consult "Scrolling" in ImGui demo)
+  ImGui::SeparatorText("Memory");
+  if (ImGui::BeginListBox("##Memory")) {
+    for (int i = 0; i < MEMORY; i ++) {
+      ImGui::Text("0x%.4X", i); ImGui::SameLine();
+      ImGui::Text("0x%.2X", chip8->memory[i]);
+    }
+    ImGui::EndListBox();
+  }
+
   ImGui::End();
 
   // Controls
@@ -192,9 +232,11 @@ void Screen::debugger() {
   ImGui::SetNextWindowPos(ImVec2(screenSize.x - controlsSize.x, 0.0f));
   ImGui::SetNextWindowSize(controlsSize);
   ImGui::Begin("Controls");
+  ImGui::PushItemWidth(100.0f);
   ImGui::InputInt("Instruction Frequency", &freq);
   chip8->instructionFrequency = freq;
   ImGui::InputInt("Step Count", &steps);
+  ImGui::PopItemWidth();
   if (ImGui::Button("Pause")) {
     chip8->paused = !chip8->paused;
   }
