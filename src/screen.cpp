@@ -160,7 +160,7 @@ void Screen::debugger() {
   static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
   int freq = static_cast<int>(chip8->instructionFrequency);
 
-  // Screen
+  /* Chip8 Screen Window */
   static ImVec2 imageSize(int(WIDTH / 2), int(HEIGHT / 2));
   static ImVec2 screenSize(imageSize.x, imageSize.y + 35);
   ImGui::SetNextWindowPos(ImVec2(WIDTH - screenSize.x, 0));
@@ -169,17 +169,19 @@ void Screen::debugger() {
   ImGui::Image(texture, imageSize);
   ImGui::End();
 
-  // State
+  /* Chip8 State Window */
   static ImVec2 stateSize(int(screenSize.x / 2), screenSize.y);
   ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SetNextWindowSize(stateSize);
   ImGui::Begin("State");
   ImGui::RadioButton("Hex", &toggleHex, 1); ImGui::SameLine();
   ImGui::RadioButton("Decimal", &toggleHex, 0);
+  // Initialize Chip8 States as String Streams
   std::stringstream opcodeStream, pcStream, keyStream;
   opcodeStream << "Opcode: 0x" << std::hex << std::uppercase << chip8->opcode;
   pcStream     << "PC:     ";
   keyStream    << "Key:    ";
+  // Formats state information depending on what the user has selected
   if (toggleHex) {
     pcStream  << "0x" << std::hex << std::uppercase << chip8->pc;
     keyStream << "0x" << std::hex << std::uppercase << int(chip8->keyPressed);
@@ -188,14 +190,15 @@ void Screen::debugger() {
     pcStream  << chip8->pc;
     keyStream << int(chip8->keyPressed);
   }
+  // Set Key Indicator to NONE if nothing is pressed
   if (chip8->keyPressed == -1) {
     keyStream.str("Key:    NONE");
   }
-
+  // Displays Chip8 State as Formatted Strings
   ImGui::TextUnformatted(pcStream.str().c_str());
   ImGui::TextUnformatted(keyStream.str().c_str());
   ImGui::TextUnformatted(opcodeStream.str().c_str());
-
+  // Displays V-Registers as a Table
   ImGui::SeparatorText("V-Registers");
   if (ImGui::BeginTable("Registers", 2, tableFlags)) {
     ImGui::TableSetupColumn("Register");
@@ -215,52 +218,25 @@ void Screen::debugger() {
   }
   ImGui::End();
 
-  // Memory
+  /* Controls Window */
   static char address[4] = "";
-  ImVec2 memorySize = ImVec2(screenSize.x, screenSize.y - 70);
-  ImU32 activeColor = ImGui::GetColorU32(ImVec4(0.0f, 0.73f, 1.0f, 0.5f));
-  ImGui::SetNextWindowSize(memorySize);
-  ImGui::SetNextWindowPos(ImVec2(0, HEIGHT - memorySize.y));
-  ImGui::Begin("Memory");
-  ImGui::Text("Jump to Address:"); ImGui::SameLine();
-  ImGui::SetNextItemWidth(100.0f);
-  if (ImGui::InputTextWithHint("##Address", "<0xXXX>", address, 4, ImGuiInputTextFlags_EnterReturnsTrue)) {
-    std::cout << address << "\n";
-  }
-  if (ImGui::BeginTable("Memory", 2, tableFlags)) {
-    ImGui::TableSetupColumn("Address");
-    ImGui::TableSetupColumn("Value");
-    ImGui::TableHeadersRow();
-    for (int i = 0; i < MEMORY; i += 2) {
-      Word word = (chip8->memory[i] << 8) | chip8->memory[i + 1];
-      ImGui::TableNextRow();
-      ImGui::TableNextColumn();
-      if (i == chip8-> pc - 1 || i == chip8->pc || i == chip8->pc + 1) // Accounts for ROM's that set the PC to an odd number
-        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
-      ImGui::Text("0x%.3X", i);
-      ImGui::TableNextColumn();
-      if (i == chip8-> pc - 1 || i == chip8->pc || i == chip8->pc + 1)
-        ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
-      ImGui::Text("0x%.4X", word);
-    }
-    ImGui::EndTable();
-  }
-  ImGui::End();
-  ImGuiInputTextCallbackData().Buf;
-
-  // Controls
+  static int jumpAddress = 0; 
   static ImVec2 controlsSize = stateSize;
   ImGui::SetNextWindowPos(ImVec2(screenSize.x - controlsSize.x, 0.0f));
   ImGui::SetNextWindowSize(controlsSize);
   ImGui::Begin("Controls");
   ImGui::PushItemWidth(100.0f);
+  // Instruction Frequency Controls
   ImGui::InputInt("Instruction Frequency", &freq);
   chip8->instructionFrequency = freq;
+  // Controls for Steps per Button Click
   ImGui::InputInt("Step Count", &steps);
   ImGui::PopItemWidth();
+  // Pause Button
   if (ImGui::Button("Pause")) {
     chip8->paused = !chip8->paused;
   }
+  // Step Button
   if (ImGui::Button("Step")) {
     if (chip8->paused) {
       for (int i = 0; i < steps; i++) {
@@ -269,6 +245,47 @@ void Screen::debugger() {
         chip8->emulateCycle();
       }
     }
+  }
+  // Memory Window Input
+  ImGui::Text("Jump to Address:"); ImGui::SameLine();
+  ImGui::SetItemTooltip("Jumps to an address in the Memory window");
+  ImGui::SetNextItemWidth(100.0f);
+  if (ImGui::InputTextWithHint("##Address", "<XXX>", address, 4, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    jumpAddress = std::stoi(address, 0, 16);
+  }
+  ImGui::SetItemTooltip("Enter a 3-digit hexadecimal address");
+  ImGui::End();
+
+  /* Memory Window */
+  ImVec2 memorySize = ImVec2(screenSize.x, screenSize.y - 70);
+  ImU32 activeColor = ImGui::GetColorU32(ImVec4(0.0f, 0.73f, 1.0f, 0.5f));
+  ImU32 jumpColor = ImGui::GetColorU32(ImVec4(0.0f, 0.73f, 1.0f, 0.1f));
+  ImGui::SetNextWindowSize(memorySize);
+  ImGui::SetNextWindowPos(ImVec2(0, HEIGHT - memorySize.y));
+  ImGui::Begin("Memory");
+  // Address Table
+  if (ImGui::BeginTable("Memory", 2, tableFlags)) {
+    ImGui::TableSetupColumn("Address");
+    ImGui::TableSetupColumn("Value");
+    ImGui::TableHeadersRow();
+    for (int i = 0; i < MEMORY; i++) {
+      bool cellJumped = i == jumpAddress;
+      bool cellActive = i == chip8->pc || i == chip8->pc + 1;
+      ImGui::TableNextRow();
+      // -- Address
+      ImGui::TableNextColumn();
+      // Highlight address if it was input
+      if (cellJumped) ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, jumpColor);
+      // Highlight current PC memory location + next address
+      if (cellActive) ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
+      ImGui::Text("0x%.3X", i);
+      // -- Value
+      ImGui::TableNextColumn();
+      if (cellJumped) ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, jumpColor);
+      if (cellActive) ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
+      ImGui::Text("0x%.2X", chip8->memory[i]);
+    }
+    ImGui::EndTable();
   }
   ImGui::End();
 }

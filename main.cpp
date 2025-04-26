@@ -5,7 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Highlight input address in Memory window
+// TODO: Update Scroll Bar position on Address Jump
 // TODO: Attempt to debug current Chip8 issues with debugger
 // TODO: Implement delete functions for Chip8, Screen
 
