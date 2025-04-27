@@ -27,6 +27,7 @@ class Screen {
     std::vector<unsigned char> *textureData;
     std::unique_ptr<Shader> shader;
     Chip8 *chip8;
+    std::vector<std::string> debugLog;
 
     void debugger();
     void updateTextureData();
@@ -37,6 +38,7 @@ class Screen {
     Screen(const char *vsPath, const char *fsPath, Chip8 *chip8);
     ~Screen();
     void draw();
+    void pushToLog(std::string entry);
 };
 
 #endif

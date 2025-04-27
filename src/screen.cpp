@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <algorithm>
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 
@@ -311,6 +312,28 @@ void Screen::debugger() {
     ImGui::EndTable();
   }
   ImGui::End();
+
+  /* Log */
+  ImVec2 logSize = memorySize;
+  ImGui::Begin("Log");
+  ImGui::SetNextWindowSize(logSize);
+  ImGui::SetNextWindowPos(ImVec2(WIDTH - logSize.x, HEIGHT - logSize.y));
+  std::cout << "ENTRIES\n";
+  for (int i = 0; i < debugLog.size(); i++) {
+    std::cout << debugLog[i] << "\n";
+    ImGui::TextUnformatted(debugLog[i].c_str());
+  }
+  ImGui::End();
+}
+
+void Screen::pushToLog(std::string entry) {
+  if (debugLog.size() <= 20) {
+    debugLog.push_back(entry);
+  } else {
+    int size = debugLog.size();
+    std::rotate(debugLog.data(), debugLog.data() + 1, debugLog.data() + size);
+    debugLog[size - 1] = entry;
+  }
 }
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <time.h>
 
 int virtualKeys[] = { 
@@ -118,6 +119,10 @@ void Chip8::startMainLoop() {
     if (paused) continue;
 
     updateTimers();
+    static int i = 1;
+    std::stringstream str;
+    str << "Entry " << i++;
+    screen->pushToLog(str.str());
 
     // Buzzer Control
     if (soundTimer > 0 && !soundPlaying) {
