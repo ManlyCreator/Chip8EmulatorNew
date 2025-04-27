@@ -4,8 +4,6 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include <cstdio>
-#include <cstdlib>
 #include <ios>
 #include <ostream>
 #include <sstream>
@@ -171,32 +169,50 @@ void Screen::debugger() {
 
   /* Chip8 State Window */
   static ImVec2 stateSize(int(screenSize.x / 2), screenSize.y);
+  std::stringstream opcodeStream, pcStream, I_Stream, keyStream, delayStream, soundStream;
+  // Lambda to convert values to hex format
+  auto formatHex = [] (int fillWidth, auto value) {
+    std::stringstream hexStream; 
+    hexStream << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(fillWidth) << value;
+    return hexStream.str();
+  };
   ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SetNextWindowSize(stateSize);
   ImGui::Begin("State");
   ImGui::RadioButton("Hex", &toggleHex, 1); ImGui::SameLine();
   ImGui::RadioButton("Decimal", &toggleHex, 0);
   // Initialize Chip8 States as String Streams
-  std::stringstream opcodeStream, pcStream, keyStream;
-  opcodeStream << "Opcode: 0x" << std::hex << std::uppercase << chip8->opcode;
-  pcStream     << "PC:     ";
-  keyStream    << "Key:    ";
-  // Formats state information depending on what the user has selected
+  opcodeStream << "Opcode:      " << formatHex(4, chip8->opcode);
+  pcStream     << "PC:          ";
+  I_Stream     << "I:           ";
+  keyStream    << "Key:         ";
+  delayStream  << "Delay Timer: ";
+  soundStream  << "Sound Timer: ";
+  // Formats state information depending on user selection
   if (toggleHex) {
-    pcStream  << "0x" << std::hex << std::uppercase << chip8->pc;
-    keyStream << "0x" << std::hex << std::uppercase << int(chip8->keyPressed);
+    pcStream    << formatHex(3, chip8->pc);
+    I_Stream    << formatHex(3, chip8->I);
+    keyStream   << formatHex(1, int(chip8->keyPressed));
+    delayStream << formatHex(2, int(chip8->delayTimer));
+    soundStream << formatHex(2, int(chip8->soundTimer));
   }
   else {
-    pcStream  << chip8->pc;
-    keyStream << int(chip8->keyPressed);
+    pcStream    << chip8->pc;
+    I_Stream    << chip8->I;
+    keyStream   << int(chip8->keyPressed);
+    delayStream << int(chip8->delayTimer); 
+    soundStream << int(chip8->soundTimer); 
   }
   // Set Key Indicator to NONE if nothing is pressed
   if (chip8->keyPressed == -1) {
-    keyStream.str("Key:    NONE");
+    keyStream.str("Key:         NONE");
   }
   // Displays Chip8 State as Formatted Strings
   ImGui::TextUnformatted(pcStream.str().c_str());
+  ImGui::TextUnformatted(I_Stream.str().c_str());
   ImGui::TextUnformatted(keyStream.str().c_str());
+  ImGui::TextUnformatted(delayStream.str().c_str());
+  ImGui::TextUnformatted(soundStream.str().c_str());
   ImGui::TextUnformatted(opcodeStream.str().c_str());
   // Displays V-Registers as a Table
   ImGui::SeparatorText("V-Registers");
@@ -221,6 +237,7 @@ void Screen::debugger() {
   /* Controls Window */
   static char address[4] = "";
   static int jumpAddress = 0; 
+  static bool jumped = false;
   static ImVec2 controlsSize = stateSize;
   ImGui::SetNextWindowPos(ImVec2(screenSize.x - controlsSize.x, 0.0f));
   ImGui::SetNextWindowSize(controlsSize);
@@ -252,6 +269,7 @@ void Screen::debugger() {
   ImGui::SetNextItemWidth(100.0f);
   if (ImGui::InputTextWithHint("##Address", "<XXX>", address, 4, ImGuiInputTextFlags_EnterReturnsTrue)) {
     jumpAddress = std::stoi(address, 0, 16);
+    jumped = true;
   }
   ImGui::SetItemTooltip("Enter a 3-digit hexadecimal address");
   ImGui::End();
@@ -265,6 +283,11 @@ void Screen::debugger() {
   ImGui::Begin("Memory");
   // Address Table
   if (ImGui::BeginTable("Memory", 2, tableFlags)) {
+    // Moves scrollbar to jumped address (17 was experimentally determined using ImGui::GetScrollY())
+    if (jumped) {
+      ImGui::SetScrollY(17 * jumpAddress);
+      jumped = false;
+    }
     ImGui::TableSetupColumn("Address");
     ImGui::TableSetupColumn("Value");
     ImGui::TableHeadersRow();

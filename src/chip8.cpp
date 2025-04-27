@@ -451,7 +451,7 @@ void Chip8::opFxxx() {
         memory[I + i] = V[i]; 
       pc += 2;
       break;
-    // 0xFx55 - Store values starting from memory[I] into registers V[0] to V[x]
+    // 0xFx65 - Store values starting from memory[I] into registers V[0] to V[x]
     case 0x0065:
       for (int i = 0; i <= x; i++)
         V[i] = memory[I + i]; 

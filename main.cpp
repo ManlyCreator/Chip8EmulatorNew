@@ -5,7 +5,9 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Update Scroll Bar position on Address Jump
+// TODO: Opcode log
+//       -- Display what the command is
+//       -- Print important information
 // TODO: Attempt to debug current Chip8 issues with debugger
 // TODO: Implement delete functions for Chip8, Screen
 
