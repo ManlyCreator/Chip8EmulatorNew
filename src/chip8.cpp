@@ -192,14 +192,14 @@ void Chip8::op0xxx() {
   switch (opcode) {
     // 0x00E0 - Clear Screen
     case 0x00E0:
-      entry << "0x00E0 CLS         |\tClearing Screen";
+      entry << "0x00E0 CLS           |\tClearing Screen";
       std::fill(display, display + (DISPLAY_WIDTH * DISPLAY_HEIGHT), 0);
       pc += 2;
       break;
     // 0x00EE - Return
     case 0x00EE:
       pc = stack[--sp] + 2;
-      entry << "0x00EE RET         |\tReturning to " << Utilities::formatHex(3, pc);
+      entry << "0x00EE RET           |\tReturning to " << Utilities::formatHex(3, pc);
       break;
   }
   screen->pushToLog(entry.str());
@@ -209,7 +209,7 @@ void Chip8::op0xxx() {
 void Chip8::op1xxx() {
   std::stringstream entry;
   pc = opcode & 0x0FFF;
-  entry << Utilities::formatHex(4, opcode) << " JP nnn      |\tSetting PC to: " << Utilities::formatHex(3, pc);
+  entry << Utilities::formatHex(4, opcode) << " JP nnn        |\tSetting PC to: " << Utilities::formatHex(3, pc);
   screen->pushToLog(entry.str());
 }
 
@@ -218,7 +218,7 @@ void Chip8::op2xxx() {
   std::stringstream entry;
   stack[sp++] = pc;
   pc = opcode & 0x0FFF;
-  entry << Utilities::formatHex(4, opcode) << " CALL nnn    |\tCalling function at: " << Utilities::formatHex(3, pc);
+  entry << Utilities::formatHex(4, opcode) << " CALL nnn      |\tCalling function at: " << Utilities::formatHex(3, pc);
   screen->pushToLog(entry.str());
 }
 
@@ -226,7 +226,7 @@ void Chip8::op2xxx() {
 void Chip8::op3xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
-  entry << Utilities::formatHex(4, opcode) << " SE Vx, bb   |\t";
+  entry << Utilities::formatHex(4, opcode) << " SE Vx, bb     |\t";
   if (V[x] == (opcode & 0x00FF)) {
     pc += 2;
     entry << "Equal, Skipping";
@@ -241,7 +241,7 @@ void Chip8::op3xxx() {
 void Chip8::op4xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
-  entry << Utilities::formatHex(4, opcode) << " SNE Vx, bb  |\t";
+  entry << Utilities::formatHex(4, opcode) << " SNE Vx, bb    |\t";
   if (V[x] != (opcode & 0x00FF)) {
     pc += 2;
     entry << "Not Equal, Skipping";
@@ -257,7 +257,7 @@ void Chip8::op5xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
-  entry << Utilities::formatHex(4, opcode) << " SE Vx, Vy   |\t";
+  entry << Utilities::formatHex(4, opcode) << " SE Vx, Vy     |\t";
   if (V[x] == V[y]) {
     pc += 2;
     entry << "Equal, Skipping";
@@ -273,7 +273,7 @@ void Chip8::op6xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   V[x] = opcode & 0x00FF;
-  entry << Utilities::formatHex(4, opcode) << " LD Vx, bb   |\tLoaded " << int(V[x]) << " into " << Utilities::formatHex(1, int(x)); 
+  entry << Utilities::formatHex(4, opcode) << " LD Vx, bb     |\tLoaded " << int(V[x]) << " into " << Utilities::formatHex(1, int(x)); 
   pc += 2;
   screen->pushToLog(entry.str());
 }
@@ -282,8 +282,7 @@ void Chip8::op6xxx() {
 void Chip8::op7xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
-  if (debugFlag) printf("Incrementing V[%d] by %d\n", x, opcode & 0x00FF);
-  entry << Utilities::formatHex(4, opcode) << " ADD Vx, bb  |\tIncrementing V[" << Utilities::formatHex(1, int(x)) << "] by " << (opcode & 0x00FF); 
+  entry << Utilities::formatHex(4, opcode) << " ADD Vx, bb    |\tIncrementing V[" << Utilities::formatHex(1, int(x)) << "] by " << (opcode & 0x00FF); 
   V[x] += opcode & 0x00FF;
   pc += 2;
   screen->pushToLog(entry.str());
@@ -300,25 +299,25 @@ void Chip8::op8xxx() {
     // 0x8xy0 - Load V[y] into V[x]
     case 0x0000:
       V[x] = V[y];
-      entry << opString << " LD Vx, Vy   |\tLoading " << int(V[x]) << " into V[" << xString << "]"; 
+      entry << opString << " LD Vx, Vy     |\tLoading " << int(V[x]) << " into V[" << xString << "]"; 
       pc += 2;
       break;
     // 0x8xy1 - Set V[x] = V[x] OR V[y]
     case 0x0001:
       V[x] |= V[y];
-      entry << opString << " OR Vx, Vy   |\tORing V[" << xString << "] and V[" << yString << "] = " << int(V[x]); 
+      entry << opString << " OR Vx, Vy     |\tORing V[" << xString << "] and V[" << yString << "] = " << int(V[x]); 
       pc += 2;
       break;
     // 0x8xy2 - Set V[x] = V[x] AND V[y]
     case 0x0002:
       V[x] &= V[y];
-      entry << opString << " AND Vx, Vy  |\tANDing V[" << xString << "] and V[" << yString << "] = " << int(V[x]); 
+      entry << opString << " AND Vx, Vy    |\tANDing V[" << xString << "] and V[" << yString << "] = " << int(V[x]); 
       pc += 2;
       break;
     // 0x8xy3 - Set V[x] = V[x] XOR V[y]
     case 0x0003:
       V[x] ^= V[y];
-      entry << opString << " XOR Vx, Vy  |\tXORing V[" << xString << "] and V[" << yString << "] = " << int(V[x]); 
+      entry << opString << " XOR Vx, Vy    |\tXORing V[" << xString << "] and V[" << yString << "] = " << int(V[x]); 
       pc += 2;
       break;
     // 0x8xy4 - Increment V[x] by V[y]
@@ -328,7 +327,7 @@ void Chip8::op8xxx() {
       else
         V[0xF] = 0;
       V[x] += V[y] & 0xFF;
-      entry << opString << " ADD Vx, Vy  |\tV[" << xString << "] + V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
+      entry << opString << " ADD Vx, Vy    |\tV[" << xString << "] + V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
     // 0x8xy5 - Decrement V[x] by V[y]
@@ -338,7 +337,7 @@ void Chip8::op8xxx() {
       else
         V[0xF] = 0;
       V[x] -= V[y];
-      entry << opString << " SUB Vx, Vy  |\tV[" << xString << "] - V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
+      entry << opString << " SUB Vx, Vy    |\tV[" << xString << "] - V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
     // 0x8xy6 - Shift right V[x] by 1 bit
@@ -348,7 +347,7 @@ void Chip8::op8xxx() {
       else
         V[0xF] = 0;
       V[x] /= 2;
-      entry << opString << " SHR Vx      |\tV[" << xString << "] >> 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
+      entry << opString << " SHR Vx        |\tV[" << xString << "] >> 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
     // 0x8xy7 - Set V[x] = V[y] - V[x]
@@ -358,7 +357,7 @@ void Chip8::op8xxx() {
       else
         V[0xF] = 0;
       V[x] = V[y] - V[x];
-      entry << opString << " SUBN Vx, Vy |\tV[" << yString << "] - V[" << xString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
+      entry << opString << " SUBN Vx, Vy   |\tV[" << yString << "] - V[" << xString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
     // 0x8xyE - Shift left V[x] by 1 bit
@@ -368,7 +367,7 @@ void Chip8::op8xxx() {
       else
         V[0xF] = 0;
       V[x] *= 2;
-      entry << opString << " SHL Vx      |\tV[" << xString << "] << 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
+      entry << opString << " SHL Vx        |\tV[" << xString << "] << 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
   }
@@ -380,7 +379,7 @@ void Chip8::op9xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
-  entry << Utilities::formatHex(4, opcode) << " SNE Vx, Vy  |\t";
+  entry << Utilities::formatHex(4, opcode) << " SNE Vx, Vy    |\t";
   if (V[x] != V[y]) {
     pc += 2;
     entry << "Not Equal, Skipping";
@@ -395,7 +394,7 @@ void Chip8::op9xxx() {
 void Chip8::opAxxx() {
   std::stringstream entry;
   I = opcode & 0x0FFF;
-  entry << Utilities::formatHex(4, opcode) << " LD I, nnn   |\tLoaded " << Utilities::formatHex(3, I) << " into I";
+  entry << Utilities::formatHex(4, opcode) << " LD I, nnn     |\tLoaded " << Utilities::formatHex(3, I) << " into I";
   if (debugFlag) {
     printf("Loaded %d into I\n", I);
     printf("memory[I] = 0x%.2x\n", memory[I]);
@@ -406,17 +405,22 @@ void Chip8::opAxxx() {
 
 // 0xBnnn - Jump to address nnn + V[0]
 void Chip8::opBxxx() {
+  std::stringstream entry;
   pc = V[0] + opcode & 0x0FFF;
-  if (debugFlag) printf("Jumped to address 0x%.3x\n", pc);
+  entry << Utilities::formatHex(4, opcode) << " JP V0, addr   |\tSet PC to: " << Utilities::formatHex(3, pc);
+  screen->pushToLog(entry.str());
 }
 
 // 0xCxbb - Set V[x] = rand(0, 255) AND bb
 void Chip8::opCxxx() {
+  std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
+  std::string xString = Utilities::formatHex(1, int(x));
   srand(time(NULL));
   V[x] = (rand() % 256) & (opcode & 0x00FF);
-  if (debugFlag) printf("Generated random number in V[0x%x]: 0x%.2x\n", x, V[x]);
+  entry << Utilities::formatHex(4, opcode) << " RND Vx, bb    |\tSetting V[" << xString << "] to " << int(V[x]);
   pc += 2;
+  screen->pushToLog(entry.str());
 }
 
 // 0xDxyn - Draw a sprite of n-bytes high at (V[x], V[y])
@@ -425,6 +429,7 @@ void Chip8::opDxxx() {
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
   Byte height = opcode & 0x000F;
+  std::stringstream entry;
   V[0xF] = 0;
   for (int i = 0; i < height; i++) {
     spriteRow = memory[I + i];
@@ -436,7 +441,9 @@ void Chip8::opDxxx() {
       display[index] ^= pixel;
     }
   }
+  entry << Utilities::formatHex(4, opcode) << " DRW Vx, Vy, n |\tDrawing at (" << int(V[x]) << ", " << int(V[y]) << "), height = " << int(height) << "; V[0xF] = " << int(V[0xF]);
   pc += 2;
+  screen->pushToLog(entry.str());
 }
 
 void Chip8::opExxx() {

@@ -108,10 +108,6 @@ Screen::Screen(const char *vsPath, const char *fsPath, Chip8 *chip8) {
 void Screen::draw() {
   glfwPollEvents();
 
-  /*ImGui_ImplOpenGL3_NewFrame();*/
-  /*ImGui_ImplGlfw_NewFrame();*/
-  /*ImGui::NewFrame();*/
-  /*ImGui::ShowDemoWindow();*/
   ImGui_ImplOpenGL3_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
