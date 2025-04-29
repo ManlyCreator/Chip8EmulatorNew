@@ -5,9 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Opcode log
-//       -- Display what the command is
-//       -- Print important information
+// TODO: Finish Implementing opcode logs for 0xBxxx onwards
 // TODO: Attempt to debug current Chip8 issues with debugger
 // TODO: Implement delete functions for Chip8, Screen
 

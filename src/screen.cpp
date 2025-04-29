@@ -4,6 +4,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <cstdarg>
+#include <cstring>
 #include <ios>
 #include <ostream>
 #include <sstream>
@@ -315,22 +317,20 @@ void Screen::debugger() {
 
   /* Log */
   ImVec2 logSize = memorySize;
-  ImGui::Begin("Log");
   ImGui::SetNextWindowSize(logSize);
-  ImGui::SetNextWindowPos(ImVec2(WIDTH - logSize.x, HEIGHT - logSize.y));
-  std::cout << "ENTRIES\n";
+  ImGui::SetNextWindowPos(ImVec2(int(WIDTH / 2), HEIGHT - logSize.y));
+  ImGui::Begin("Log");
   for (int i = 0; i < debugLog.size(); i++) {
-    std::cout << debugLog[i] << "\n";
     ImGui::TextUnformatted(debugLog[i].c_str());
   }
   ImGui::End();
 }
 
 void Screen::pushToLog(std::string entry) {
-  if (debugLog.size() <= 20) {
+  int size = debugLog.size();
+  if (size < 100) {
     debugLog.push_back(entry);
   } else {
-    int size = debugLog.size();
     std::rotate(debugLog.data(), debugLog.data() + 1, debugLog.data() + size);
     debugLog[size - 1] = entry;
   }
