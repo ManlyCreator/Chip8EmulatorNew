@@ -168,7 +168,7 @@ void Screen::debugger() {
 
   /* Chip8 State Window */
   static ImVec2 stateSize(int(screenSize.x / 2), screenSize.y);
-  std::stringstream opcodeStream, pcStream, I_Stream, keyStream, delayStream, soundStream;
+  std::stringstream opcodeStream, pcStream, I_Stream, keyStream, delayStream, soundStream, spStream;
   // Lambda to convert values to hex format
   auto formatHex = [] (int fillWidth, auto value) {
     std::stringstream hexStream; 
@@ -181,12 +181,13 @@ void Screen::debugger() {
   ImGui::RadioButton("Hex", &toggleHex, 1); ImGui::SameLine();
   ImGui::RadioButton("Decimal", &toggleHex, 0);
   // Initialize Chip8 States as String Streams
-  opcodeStream << "Opcode:      " << formatHex(4, chip8->opcode);
-  pcStream     << "PC:          ";
-  I_Stream     << "I:           ";
-  keyStream    << "Key:         ";
-  delayStream  << "Delay Timer: ";
-  soundStream  << "Sound Timer: ";
+  opcodeStream << "Opcode:        " << formatHex(4, chip8->opcode);
+  pcStream     << "PC:            ";
+  I_Stream     << "I:             ";
+  keyStream    << "Key:           ";
+  delayStream  << "Delay Timer:   ";
+  soundStream  << "Sound Timer:   ";
+  spStream     << "Stack Pointer: ";
   // Formats state information depending on user selection
   if (toggleHex) {
     pcStream    << formatHex(3, chip8->pc);
@@ -194,6 +195,7 @@ void Screen::debugger() {
     keyStream   << formatHex(1, int(chip8->keyPressed));
     delayStream << formatHex(2, int(chip8->delayTimer));
     soundStream << formatHex(2, int(chip8->soundTimer));
+    spStream    << formatHex(2, int(chip8->sp));
   }
   else {
     pcStream    << chip8->pc;
@@ -201,10 +203,11 @@ void Screen::debugger() {
     keyStream   << int(chip8->keyPressed);
     delayStream << int(chip8->delayTimer); 
     soundStream << int(chip8->soundTimer); 
+    spStream    << int(chip8->sp);
   }
   // Set Key Indicator to NONE if nothing is pressed
   if (chip8->keyPressed == -1) {
-    keyStream.str("Key:         NONE");
+    keyStream.str("Key:           NONE");
   }
   // Displays Chip8 State as Formatted Strings
   ImGui::TextUnformatted(pcStream.str().c_str());
@@ -231,6 +234,25 @@ void Screen::debugger() {
     }
     ImGui::EndTable();
   }
+  // Stack
+  ImU32 activeColor = ImGui::GetColorU32(ImVec4(0.0f, 0.73f, 1.0f, 0.5f));
+  ImGui::TextUnformatted(spStream.str().c_str());
+  ImGui::SeparatorText("Stack");
+  if (ImGui::BeginTable("Stack", 2, tableFlags)) {
+    ImGui::TableSetupColumn("Index");
+    ImGui::TableSetupColumn("Function");
+    ImGui::TableHeadersRow();
+    for (int i = 0; i < 16; i++) {
+      ImGui::TableNextRow();
+      ImGui::TableNextColumn();
+      if (i == chip8->sp - 1) ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
+      ImGui::Text("0x%.1X", i);
+      ImGui::TableNextColumn();
+      if (i == chip8->sp - 1) ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, activeColor);
+      ImGui::Text("0x%.3X", chip8->stack[i]);
+    }
+    ImGui::EndTable();
+  }
   ImGui::End();
 
   /* Controls Window */
@@ -251,6 +273,7 @@ void Screen::debugger() {
   // Pause Button
   if (ImGui::Button("Pause")) {
     chip8->paused = !chip8->paused;
+    std::cout << "Button Clicked\n";
   }
   // Step Button
   if (ImGui::Button("Step")) {
@@ -275,7 +298,6 @@ void Screen::debugger() {
 
   /* Memory Window */
   ImVec2 memorySize = ImVec2(screenSize.x, screenSize.y - 70);
-  ImU32 activeColor = ImGui::GetColorU32(ImVec4(0.0f, 0.73f, 1.0f, 0.5f));
   ImU32 jumpColor = ImGui::GetColorU32(ImVec4(0.0f, 0.73f, 1.0f, 0.1f));
   ImGui::SetNextWindowSize(memorySize);
   ImGui::SetNextWindowPos(ImVec2(0, HEIGHT - memorySize.y));

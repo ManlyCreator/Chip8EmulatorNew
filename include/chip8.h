@@ -75,6 +75,7 @@ class Chip8 {
 
   public:
     Chip8(Byte instructionFrequency, Byte debugFlag);
+    ~Chip8();
     int loadROM(const char *romPath);
     void startMainLoop();
 };

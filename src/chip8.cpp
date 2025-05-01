@@ -1,4 +1,5 @@
 #include "chip8.h"
+#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -82,6 +83,7 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   };
 
   std::fill(memory, memory + MEMORY, 0);
+  std::fill(stack, stack + 16, 0);
   for (int i = 0; i < 80; i++) {
     memory[i] = fontset[i];
   }
@@ -119,13 +121,16 @@ void Chip8::startMainLoop() {
   while (!glfwWindowShouldClose(screen->window)) {
     screen->draw();
 
-    if (paused) continue;
+    std::cout << "Debug Flag: " << int(debugFlag) << "\n";
+    std::cout << "Paused: " << paused << "\n";
+    /*if (paused) continue;*/
 
     updateTimers();
-    /*static int i = 1;*/
-    /*std::stringstream entry;*/
-    /*entry << "Entry " << i++;*/
-    /*screen->pushToLog(entry.str());*/
+    std::cout << "Current Time: " << currentTime << "\n";
+    std::cout << "Last Time: " << lastTime << "\n";
+    std::cout << "Delta Time: " << deltaTime << "\n";
+    std::cout << "Elapsed Time: " << elapsedTime << "\n";
+    std::cout << "Display Frequency: " << DISPLAY_FREQUENCY << "\n";
 
     // Buzzer Control
     if (soundTimer > 0 && !soundPlaying) {
@@ -137,6 +142,8 @@ void Chip8::startMainLoop() {
       soundPlaying = 0;
     }
     
+    lastTime = glfwGetTime();
+
     // Display Refresh
     if (elapsedTime < DISPLAY_FREQUENCY) continue;
     tick();
@@ -150,22 +157,20 @@ void Chip8::updateTimers() {
   currentTime = glfwGetTime();
   deltaTime = currentTime - lastTime;
   elapsedTime += deltaTime;
-  lastTime = glfwGetTime();
 }
 
 void Chip8::tick() {
   for (int i = 0; i < instructionFrequency; i++) {
-    emulateCycle();
     updateTimers();
+    emulateCycle();
+    lastTime = glfwGetTime();
   }
 }
 
 void Chip8::emulateCycle() {
   opcode = (memory[pc] << 8) | memory[pc + 1];
-  if (debugFlag) {
-    printf("Reading memory[0x%.3x] = 0x%.2x and memory[0x%.3x] = 0x%.2x\n", pc, memory[pc], pc + 1, memory[pc + 1]);
-    printf("Opcode: 0x%.4x\n", opcode);
-  }
+  /*printf("Reading memory[0x%.3x] = 0x%.2x and memory[0x%.3x] = 0x%.2x\n", pc, memory[pc], pc + 1, memory[pc + 1]);*/
+  /*printf("Opcode: 0x%.4x\n", opcode);*/
 
   // Process input before decoding
   processInput();
@@ -186,7 +191,6 @@ void Chip8::processInput() {
   }
 }
 
-// TODO: Have opcodes return a std::string for ease of use
 void Chip8::op0xxx() {
   std::stringstream entry;
   switch (opcode) {
@@ -198,6 +202,7 @@ void Chip8::op0xxx() {
       break;
     // 0x00EE - Return
     case 0x00EE:
+      stack[sp] = 0;
       pc = stack[--sp] + 2;
       entry << "0x00EE RET           |\tReturning to " << Utilities::formatHex(3, pc);
       break;
@@ -273,7 +278,7 @@ void Chip8::op6xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   V[x] = opcode & 0x00FF;
-  entry << Utilities::formatHex(4, opcode) << " LD Vx, bb     |\tLoaded " << int(V[x]) << " into " << Utilities::formatHex(1, int(x)); 
+  entry << Utilities::formatHex(4, opcode) << " LD Vx, bb     |\tLoaded " << int(V[x]) << " into V[" << Utilities::formatHex(1, int(x)) << "]"; 
   pc += 2;
   screen->pushToLog(entry.str());
 }
@@ -395,10 +400,6 @@ void Chip8::opAxxx() {
   std::stringstream entry;
   I = opcode & 0x0FFF;
   entry << Utilities::formatHex(4, opcode) << " LD I, nnn     |\tLoaded " << Utilities::formatHex(3, I) << " into I";
-  if (debugFlag) {
-    printf("Loaded %d into I\n", I);
-    printf("memory[I] = 0x%.2x\n", memory[I]);
-  }
   pc += 2;
   screen->pushToLog(entry.str());
 }
@@ -447,25 +448,38 @@ void Chip8::opDxxx() {
 }
 
 void Chip8::opExxx() {
+  std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
   switch (opcode & 0x00FF) {
     // 0xEx9E - Skip next instruction if the key value of V[x] is pressed
     case 0x009E:
-      if (key[V[x]])
+      entry << Utilities::formatHex(4, opcode) << " SKP Vx        |\t" << Utilities::formatHex(1, int(V[x])) << " pressed? ";
+      if (key[V[x]]) {
         pc += 2;
+        entry << "Yes, skipping";
+      } else {
+        entry << "No, not skipping";
+      }
       pc += 2;
       break;
     // 0xExA1 - Skip next instruction if the key value of V[x] is NOT pressed
     case 0x00A1:
-      if (!key[V[x]])
+      entry << Utilities::formatHex(4, opcode) << " SKNP Vx       |\t" << Utilities::formatHex(1, int(V[x])) << " pressed? ";
+      if (!key[V[x]]) {
         pc += 2;
+        entry << "No, skipping";
+      } else {
+        entry << "Yes, not skipping";
+      }
       pc += 2;
       break;
   }
+  screen->pushToLog(entry.str());
 }
 
 void Chip8::opFxxx() {
+  std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
   switch (opcode & 0x00FF) {
@@ -473,61 +487,74 @@ void Chip8::opFxxx() {
     case 0x0007:
       V[x] = delayTimer;
       pc += 2;
+      entry << Utilities::formatHex(4, opcode) << " LD Vx, DT     |\tSetting V[" << Utilities::formatHex(1, int(x)) << "] = " << int(delayTimer);
       break;
     // 0xFx0A - Wait for input and store the key value in V[x]
     case 0x000A:
-      if (debugFlag) printf("Waiting for input...\n");
+      entry << Utilities::formatHex(4, opcode) << " LD Vx, K      |\tWating for input... ";
       if (keyPressed < 0) 
         break;
       V[x] = keyPressed;
-      if (debugFlag) printf("Key 0x%.1x Pressed\n", V[x]);
+      entry << "Key " << Utilities::formatHex(1, V[x]) << " pressed";
       pc += 2;
       break;
     // 0xFx15 - Set delayTimer = V[x]
     case 0x0015:
       delayTimer = V[x];
       pc += 2;
+      entry << Utilities::formatHex(4, opcode) << " LD DT, Vx     |\tSetting Delay Timer = " << int(V[x]);
       break;
     // 0xFx18 - Set soundTimer = V[x]
     case 0x0018:
-      /*printf("Setting Sound Timer\n");*/
       soundTimer = V[x];
       pc += 2;
+      entry << Utilities::formatHex(4, opcode) << " LD ST, Vx     |\tSetting Sound Timer = " << int(V[x]);
       break;
     // 0xFx1E - Set I = I + V[x]
     case 0x001E:
       I += V[x];
       pc += 2;
+      entry << Utilities::formatHex(4, opcode) << " ADD I, Vx     |\tI + V[" << Utilities::formatHex(1, int(x)) << "] = " << Utilities::formatHex(3, I);
       break;
     // 0xFx29 - Set I equal to the memory address of the font-sprite for the value in V[x]
     case 0x0029:
       I = V[x] * 5;
       pc += 2;
+      entry << Utilities::formatHex(4, opcode) << " LD F, Vx      |\t";
       break;
     // 0xFx33 - Store BCD representation of V[x] at memory locations I, I + 1, I + 2
     case 0x0033:
-      if (debugFlag) printf("V[%.1x] = %d\n", x, V[x]);
       memory[I] = V[x] / 100;
       memory[I + 1] = (V[x] % 100) / 10;
       memory[I + 2] = V[x] % 10;
-      if (debugFlag) {
-        printf("memory[0x%.3x] = %d\n", I, memory[I]);
-        printf("memory[0x%.3x] = %d\n", I + 1, memory[I + 1]);
-        printf("memory[0x%.3x] = %d\n", I + 2, memory[I + 2]);
-      }
+      entry << Utilities::formatHex(4, opcode) << " LD B, Vx      |\t";
+      entry << "memory[" << Utilities::formatHex(3, I) << "] = " << int(memory[I]);
+      entry << "memory[" << Utilities::formatHex(3, I + 1) << "] = " << int(memory[I + 1]);
+      entry << "memory[" << Utilities::formatHex(3, I + 2) << "] = " << int(memory[I + 2]);
       pc += 2;
       break;
     // 0xFx55 - Store values from registers V[0] to V[x] into memory[I] onwards
     case 0x0055:
-      for (int i = 0; i <= x; i++)
+      entry << Utilities::formatHex(4, opcode) << " LD [I], Vx    |\t";
+      for (int i = 0; i <= x; i++) {
         memory[I + i] = V[i]; 
+        entry << "memory[" << Utilities::formatHex(3, I + i) << "] = " << int(V[i]) << "; ";
+      }
       pc += 2;
       break;
     // 0xFx65 - Store values starting from memory[I] into registers V[0] to V[x]
     case 0x0065:
-      for (int i = 0; i <= x; i++)
+      entry << Utilities::formatHex(4, opcode) << " LD Vx, [I]    |\t";
+      for (int i = 0; i <= x; i++) {
         V[i] = memory[I + i]; 
+        entry << "V[" << Utilities::formatHex(1, i) << "] = " << int(V[i]) << "; ";
+      }
       pc += 2;
       break;
   }
+  screen->pushToLog(entry.str());
+}
+
+Chip8::~Chip8() {
+  std::cout << "Destroying Chip8\n";
 }
