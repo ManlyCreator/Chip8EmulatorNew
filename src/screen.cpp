@@ -1,6 +1,7 @@
 #include "screen.h"
 #include "GLFW/glfw3.h"
 #include "chip8.h"
+#include "utilities.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -169,19 +170,13 @@ void Screen::debugger() {
   /* Chip8 State Window */
   static ImVec2 stateSize(int(screenSize.x / 2), screenSize.y);
   std::stringstream opcodeStream, pcStream, I_Stream, keyStream, delayStream, soundStream, spStream;
-  // Lambda to convert values to hex format
-  auto formatHex = [] (int fillWidth, auto value) {
-    std::stringstream hexStream; 
-    hexStream << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(fillWidth) << value;
-    return hexStream.str();
-  };
   ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
   ImGui::SetNextWindowSize(stateSize);
   ImGui::Begin("State");
   ImGui::RadioButton("Hex", &toggleHex, 1); ImGui::SameLine();
   ImGui::RadioButton("Decimal", &toggleHex, 0);
   // Initialize Chip8 States as String Streams
-  opcodeStream << "Opcode:        " << formatHex(4, chip8->opcode);
+  opcodeStream << "Opcode:        " << Utilities::formatHex(4, chip8->opcode);
   pcStream     << "PC:            ";
   I_Stream     << "I:             ";
   keyStream    << "Key:           ";
@@ -190,12 +185,12 @@ void Screen::debugger() {
   spStream     << "Stack Pointer: ";
   // Formats state information depending on user selection
   if (toggleHex) {
-    pcStream    << formatHex(3, chip8->pc);
-    I_Stream    << formatHex(3, chip8->I);
-    keyStream   << formatHex(1, int(chip8->keyPressed));
-    delayStream << formatHex(2, int(chip8->delayTimer));
-    soundStream << formatHex(2, int(chip8->soundTimer));
-    spStream    << formatHex(2, int(chip8->sp));
+    pcStream    << Utilities::formatHex(3, chip8->pc);
+    I_Stream    << Utilities::formatHex(3, chip8->I);
+    keyStream   << Utilities::formatHex(1, int(chip8->keyPressed));
+    delayStream << Utilities::formatHex(2, int(chip8->delayTimer));
+    soundStream << Utilities::formatHex(2, int(chip8->soundTimer));
+    spStream    << Utilities::formatHex(2, int(chip8->sp));
   }
   else {
     pcStream    << chip8->pc;
@@ -273,7 +268,6 @@ void Screen::debugger() {
   // Pause Button
   if (ImGui::Button("Pause")) {
     chip8->paused = !chip8->paused;
-    std::cout << "Button Clicked\n";
   }
   // Step Button
   if (ImGui::Button("Step")) {
@@ -345,6 +339,7 @@ void Screen::debugger() {
 }
 
 void Screen::pushToLog(std::string entry) {
+  std::cout << entry << "\n";
   int size = debugLog.size();
   if (size < 100) {
     debugLog.push_back(entry);

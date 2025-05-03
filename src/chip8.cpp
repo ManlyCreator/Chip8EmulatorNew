@@ -63,24 +63,6 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   deltaTime = 0;
   opcode = 0;
   paused = false;
-  opcodeTable = {
-    &Chip8::op0xxx,
-    &Chip8::op1xxx,
-    &Chip8::op2xxx,
-    &Chip8::op3xxx,
-    &Chip8::op4xxx,
-    &Chip8::op5xxx,
-    &Chip8::op6xxx,
-    &Chip8::op7xxx,
-    &Chip8::op8xxx,
-    &Chip8::op9xxx,
-    &Chip8::opAxxx,
-    &Chip8::opBxxx,
-    &Chip8::opCxxx,
-    &Chip8::opDxxx,
-    &Chip8::opExxx,
-    &Chip8::opFxxx,
-  };
 
   std::fill(memory, memory + MEMORY, 0);
   std::fill(stack, stack + 16, 0);
@@ -121,16 +103,9 @@ void Chip8::startMainLoop() {
   while (!glfwWindowShouldClose(screen->window)) {
     screen->draw();
 
-    std::cout << "Debug Flag: " << int(debugFlag) << "\n";
-    std::cout << "Paused: " << paused << "\n";
-    /*if (paused) continue;*/
+    if (paused) continue;
 
     updateTimers();
-    std::cout << "Current Time: " << currentTime << "\n";
-    std::cout << "Last Time: " << lastTime << "\n";
-    std::cout << "Delta Time: " << deltaTime << "\n";
-    std::cout << "Elapsed Time: " << elapsedTime << "\n";
-    std::cout << "Display Frequency: " << DISPLAY_FREQUENCY << "\n";
 
     // Buzzer Control
     if (soundTimer > 0 && !soundPlaying) {
@@ -351,7 +326,7 @@ void Chip8::op8xxx() {
         V[0xF] = 1;
       else
         V[0xF] = 0;
-      V[x] /= 2;
+      V[x] = V[x] >> 1;
       entry << opString << " SHR Vx        |\tV[" << xString << "] >> 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
@@ -371,7 +346,7 @@ void Chip8::op8xxx() {
         V[0xF] = 1;
       else
         V[0xF] = 0;
-      V[x] *= 2;
+      V[x] = V[x] << 1;
       entry << opString << " SHL Vx        |\tV[" << xString << "] << 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;

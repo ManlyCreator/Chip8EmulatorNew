@@ -7,12 +7,9 @@
 void checkError();
 
 Buzzer::Buzzer() {
-  printf("Init Buzzer\n");
   ALuint buffer;
-  printf("Init Samples\n");
   ALuint samples[NUM_SAMPLES];
 
-  printf("Generating Tone\n");
   // Generate Tone
   for (int i = 0; i < NUM_SAMPLES; i++) {
     float t = (float)i / SAMPLE_RATE;

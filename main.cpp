@@ -5,6 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
+// TODO: Compare opcodes with existing Chip8 to debug
 // TODO: Debug stack pointer going negative
 // TODO: Attempt to debug current Chip8 issues with debugger
 // TODO: Implement delete functions for Chip8, Screen
