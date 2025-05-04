@@ -154,6 +154,7 @@ void Screen::updateTextureData() {
 void Screen::debugger() {
   // Debugger Settings
   static int steps = 1;
+  static int stepCounter = 0;
   static int toggleHex = 1;
   static ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg;
   int freq = static_cast<int>(chip8->instructionFrequency);
@@ -273,9 +274,13 @@ void Screen::debugger() {
   if (ImGui::Button("Step")) {
     if (chip8->paused) {
       for (int i = 0; i < steps; i++) {
-        chip8->soundTimer = chip8->soundTimer > 0 ? chip8->soundTimer - 1 : 0;
-        chip8->delayTimer = chip8->delayTimer > 0 ? chip8->delayTimer - 1 : 0;
+        // Ensures that timers are decremented at 60 HZ when paused 
+        if (stepCounter % 60 == 0) {
+          chip8->soundTimer = chip8->soundTimer > 0 ? chip8->soundTimer - 1 : 0;
+          chip8->delayTimer = chip8->delayTimer > 0 ? chip8->delayTimer - 1 : 0;
+        }
         chip8->emulateCycle();
+        stepCounter++;
       }
     }
   }

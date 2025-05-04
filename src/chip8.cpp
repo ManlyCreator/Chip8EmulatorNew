@@ -62,7 +62,7 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   elapsedTime = 0;
   deltaTime = 0;
   opcode = 0;
-  paused = false;
+  paused = true;
 
   std::fill(memory, memory + MEMORY, 0);
   std::fill(stack, stack + 16, 0);
@@ -144,8 +144,6 @@ void Chip8::tick() {
 
 void Chip8::emulateCycle() {
   opcode = (memory[pc] << 8) | memory[pc + 1];
-  /*printf("Reading memory[0x%.3x] = 0x%.2x and memory[0x%.3x] = 0x%.2x\n", pc, memory[pc], pc + 1, memory[pc + 1]);*/
-  /*printf("Opcode: 0x%.4x\n", opcode);*/
 
   // Process input before decoding
   processInput();
@@ -306,7 +304,7 @@ void Chip8::op8xxx() {
         V[0xF] = 1;
       else
         V[0xF] = 0;
-      V[x] += V[y] & 0xFF;
+      V[x] = (V[x] + V[y]) & 0xFF;
       entry << opString << " ADD Vx, Vy    |\tV[" << xString << "] + V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
