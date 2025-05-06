@@ -5,7 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Debug 0x8xy4 using flags test
+// TODO: Debug 0x8xy5 using flags test
 // TODO: Implement delete functions for Chip8, Screen
 
 int main(int argc, char **argv) {

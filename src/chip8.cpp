@@ -299,25 +299,31 @@ void Chip8::op8xxx() {
       pc += 2;
       break;
     // 0x8xy4 - Increment V[x] by V[y]
-    case 0x0004:
-      if (V[x] + V[y] > 0xFF)
+    case 0x0004: {
+      Word sum = V[x] + V[y];
+      V[x] = sum & 0xFF;
+      if (sum > 0xFF)
         V[0xF] = 1;
       else
         V[0xF] = 0;
-      V[x] = (V[x] + V[y]) & 0xFF;
       entry << opString << " ADD Vx, Vy    |\tV[" << xString << "] + V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
+      }
     // 0x8xy5 - Decrement V[x] by V[y]
-    case 0x0005:
-      if (V[x] > V[y]) 
-        V[0xF] = 1;
-      else
-        V[0xF] = 0;
-      V[x] -= V[y];
-      entry << opString << " SUB Vx, Vy    |\tV[" << xString << "] - V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
-      pc += 2;
-      break;
+    case 0x0005: {
+        Byte tempX = V[x];
+        Byte tempY = V[y];
+        V[x] = V[x] - V[y];
+        if (V[x] > V[y]) 
+          V[0xF] = 1;
+        else
+          V[0xF] = 0;
+        /*entry << opString << " SUB Vx, Vy    |\tV[" << xString << "] - V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); */
+        entry << opString << " SUB Vx, Vy    |\t" << int(tempX) << " - " << int(tempY) << " = "<< int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
+        pc += 2;
+        break;
+     }
     // 0x8xy6 - Shift right V[x] by 1 bit
     case 0x0006:
       if ((V[x] & 0x01) == 0x01)
@@ -330,11 +336,11 @@ void Chip8::op8xxx() {
       break;
     // 0x8xy7 - Set V[x] = V[y] - V[x]
     case 0x0007:
+      V[x] = V[y] - V[x];
       if (V[y] > V[x])
         V[0xF] = 1;
       else
         V[0xF] = 0;
-      V[x] = V[y] - V[x];
       entry << opString << " SUBN Vx, Vy   |\tV[" << yString << "] - V[" << xString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
