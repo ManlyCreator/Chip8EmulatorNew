@@ -144,9 +144,9 @@ void Screen::draw() {
 
 void Screen::updateTextureData() {
   for (unsigned int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
-    (*textureData)[i * 4] = chip8->display[i];
-    (*textureData)[i * 4 + 1] = chip8->display[i];
-    (*textureData)[i * 4 + 2] = chip8->display[i];
+    (*textureData)[i * 4]     = chip8->display[i] * 255;
+    (*textureData)[i * 4 + 1] = chip8->display[i] * 255;
+    (*textureData)[i * 4 + 2] = chip8->display[i] * 255;
     (*textureData)[i * 4 + 3] = 255;
   }
 }

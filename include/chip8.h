@@ -8,7 +8,7 @@
 #include "buzzer.h"
 
 #define MEMORY 4096
-#define DISPLAY_FREQUENCY (float)1 / 60
+#define DISPLAY_FREQUENCY (float)1 / 120
 #define LOG_WIDTH 50
 
 #define Byte unsigned char

@@ -1,4 +1,5 @@
 #include "chip8.h"
+#include "screen.h"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cmath>
@@ -62,8 +63,9 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   elapsedTime = 0;
   deltaTime = 0;
   opcode = 0;
-  paused = true;
+  paused = false;
 
+  srand(time(NULL));
   std::fill(memory, memory + MEMORY, 0);
   std::fill(stack, stack + 16, 0);
   for (int i = 0; i < 80; i++) {
@@ -175,9 +177,14 @@ void Chip8::op0xxx() {
       break;
     // 0x00EE - Return
     case 0x00EE:
+      entry << "0x00EE RET           |\t";
+      if (sp <= 0) {
+        entry << "Stack Underflow! SP = " << int(sp);
+        break;
+      }
       stack[sp] = 0;
       pc = stack[--sp] + 2;
-      entry << "0x00EE RET           |\tReturning to " << Utilities::formatHex(3, pc);
+      entry << "Returning to " << Utilities::formatHex(3, pc);
       break;
   }
   screen->pushToLog(entry.str());
@@ -194,9 +201,15 @@ void Chip8::op1xxx() {
 // 0x2nnn - Call function at nnn
 void Chip8::op2xxx() {
   std::stringstream entry;
+  entry << Utilities::formatHex(4, opcode) << " CALL nnn      |\t";
+  if (sp >= 16) {
+    entry << "Stack Overflow! SP = " << int(sp);
+    pc += 2;
+    return;
+  }
   stack[sp++] = pc;
   pc = opcode & 0x0FFF;
-  entry << Utilities::formatHex(4, opcode) << " CALL nnn      |\tCalling function at: " << Utilities::formatHex(3, pc);
+  entry << "Calling function at: " << Utilities::formatHex(3, pc);
   screen->pushToLog(entry.str());
 }
 
@@ -309,28 +322,24 @@ void Chip8::op8xxx() {
       entry << opString << " ADD Vx, Vy    |\tV[" << xString << "] + V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
-      }
+    }
     // 0x8xy5 - Decrement V[x] by V[y]
-    case 0x0005: {
-        Byte tempX = V[x];
-        Byte tempY = V[y];
-        V[x] = V[x] - V[y];
-        if (V[x] > V[y]) 
-          V[0xF] = 1;
-        else
-          V[0xF] = 0;
-        /*entry << opString << " SUB Vx, Vy    |\tV[" << xString << "] - V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); */
-        entry << opString << " SUB Vx, Vy    |\t" << int(tempX) << " - " << int(tempY) << " = "<< int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
-        pc += 2;
-        break;
-     }
+    case 0x0005:
+      if (V[x] > V[y]) 
+        V[0xF] = 1;
+      else
+        V[0xF] = 0;
+      V[x] = V[x] - V[y];
+      entry << opString << " SUB Vx, Vy    |\tV[" << xString << "] - V[" << yString << "] = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
+      pc += 2;
+      break;
     // 0x8xy6 - Shift right V[x] by 1 bit
     case 0x0006:
+      V[x] = V[x] >> 1;
       if ((V[x] & 0x01) == 0x01)
         V[0xF] = 1;
       else
         V[0xF] = 0;
-      V[x] = V[x] >> 1;
       entry << opString << " SHR Vx        |\tV[" << xString << "] >> 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
@@ -346,11 +355,11 @@ void Chip8::op8xxx() {
       break;
     // 0x8xyE - Shift left V[x] by 1 bit
     case 0x000E:
+      V[x] = V[x] << 1;
       if ((V[x] & 0x80) == 0x80) 
         V[0xF] = 1;
       else
         V[0xF] = 0;
-      V[x] = V[x] << 1;
       entry << opString << " SHL Vx        |\tV[" << xString << "] << 1 = " << int(V[x]) << "; V[0xF] = " << int(V[0xF]); 
       pc += 2;
       break;
@@ -396,7 +405,6 @@ void Chip8::opCxxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   std::string xString = Utilities::formatHex(1, int(x));
-  srand(time(NULL));
   V[x] = (rand() % 256) & (opcode & 0x00FF);
   entry << Utilities::formatHex(4, opcode) << " RND Vx, bb    |\tSetting V[" << xString << "] to " << int(V[x]);
   pc += 2;
@@ -406,16 +414,20 @@ void Chip8::opCxxx() {
 // 0xDxyn - Draw a sprite of n-bytes high at (V[x], V[y])
 void Chip8::opDxxx() {
   Byte spriteRow;
-  Byte x = (opcode & 0x0F00) >> 8;
-  Byte y = (opcode & 0x00F0) >> 4;
+  Byte x = V[(opcode & 0x0F00) >> 8] % DISPLAY_WIDTH;
+  Byte y = V[(opcode & 0x00F0) >> 4] % DISPLAY_HEIGHT;
   Byte height = opcode & 0x000F;
   std::stringstream entry;
   V[0xF] = 0;
   for (int i = 0; i < height; i++) {
+    if (y + i >= DISPLAY_HEIGHT) break;
+    if (I + i >= MEMORY) break;
     spriteRow = memory[I + i];
     for (int j = 0; j < 8; j++) {
-      unsigned index = V[x] + j + ((V[y] + i) * DISPLAY_WIDTH);
-      Byte pixel = (spriteRow & (0x80 >> j)) > 0 ? 255 : 0;
+      if (x + j >= DISPLAY_WIDTH) break;
+      Byte pixel = (spriteRow & (0x80 >> j)) > 0 ? 1 : 0;
+      if (!pixel) continue;
+      unsigned index = x + j + ((y + i) * DISPLAY_WIDTH);
       if (display[index] > 0)
         V[0xF] = 1;
       display[index] ^= pixel;
@@ -507,15 +519,15 @@ void Chip8::opFxxx() {
       memory[I + 1] = (V[x] % 100) / 10;
       memory[I + 2] = V[x] % 10;
       entry << Utilities::formatHex(4, opcode) << " LD B, Vx      |\t";
-      entry << "memory[" << Utilities::formatHex(3, I) << "] = " << int(memory[I]);
-      entry << "memory[" << Utilities::formatHex(3, I + 1) << "] = " << int(memory[I + 1]);
-      entry << "memory[" << Utilities::formatHex(3, I + 2) << "] = " << int(memory[I + 2]);
+      entry << "memory[" << Utilities::formatHex(3, I) << "] = "     << int(memory[I])     << "; ";
+      entry << "memory[" << Utilities::formatHex(3, I + 1) << "] = " << int(memory[I + 1]) << "; ";
+      entry << "memory[" << Utilities::formatHex(3, I + 2) << "] = " << int(memory[I + 2]) << "; ";
       pc += 2;
       break;
     // 0xFx55 - Store values from registers V[0] to V[x] into memory[I] onwards
     case 0x0055:
       entry << Utilities::formatHex(4, opcode) << " LD [I], Vx    |\t";
-      for (int i = 0; i <= x; i++) {
+      for (int i = 0; i <= x && I + i < MEMORY; i++) {
         memory[I + i] = V[i]; 
         entry << "memory[" << Utilities::formatHex(3, I + i) << "] = " << int(V[i]) << "; ";
       }
@@ -524,7 +536,7 @@ void Chip8::opFxxx() {
     // 0xFx65 - Store values starting from memory[I] into registers V[0] to V[x]
     case 0x0065:
       entry << Utilities::formatHex(4, opcode) << " LD Vx, [I]    |\t";
-      for (int i = 0; i <= x; i++) {
+      for (int i = 0; i <= x && I + i < MEMORY; i++) {
         V[i] = memory[I + i]; 
         entry << "V[" << Utilities::formatHex(1, i) << "] = " << int(V[i]) << "; ";
       }
