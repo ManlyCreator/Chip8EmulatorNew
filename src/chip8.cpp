@@ -76,7 +76,7 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   buzzer = std::make_unique<Buzzer>();
 }
 
-int Chip8::loadROM(const char *romPath) {
+int Chip8::LoadROM(const char *romPath) {
   Byte *buffer;
   std::size_t bufferSize;
   std::ifstream rom(romPath, std::ios::binary | std::ios::ate);
@@ -100,22 +100,22 @@ int Chip8::loadROM(const char *romPath) {
   return 1; 
 }
 
-void Chip8::startMainLoop() {
+void Chip8::StartMainLoop() {
   Byte soundPlaying = 0;
   while (!glfwWindowShouldClose(screen->window)) {
-    screen->draw();
+    screen->Draw();
 
     if (paused) continue;
 
-    updateTimers();
+    UpdateTimers();
 
     // Buzzer Control
     if (soundTimer > 0 && !soundPlaying) {
-      buzzer->play();
+      buzzer->Play();
       soundPlaying = 1;
     }
     else {
-      buzzer->stop();
+      buzzer->Stop();
       soundPlaying = 0;
     }
     
@@ -123,38 +123,38 @@ void Chip8::startMainLoop() {
 
     // Display Refresh
     if (elapsedTime < DISPLAY_FREQUENCY) continue;
-    tick();
+    Tick();
     soundTimer = soundTimer > 0 ? soundTimer - 1 : 0;
     delayTimer = delayTimer > 0 ? delayTimer - 1 : 0;
     elapsedTime = 0;
   }
 }
 
-void Chip8::updateTimers() {
+void Chip8::UpdateTimers() {
   currentTime = glfwGetTime();
   deltaTime = currentTime - lastTime;
   elapsedTime += deltaTime;
 }
 
-void Chip8::tick() {
+void Chip8::Tick() {
   for (int i = 0; i < instructionFrequency; i++) {
-    updateTimers();
-    emulateCycle();
+    UpdateTimers();
+    EmulateCycle();
     lastTime = glfwGetTime();
   }
 }
 
-void Chip8::emulateCycle() {
+void Chip8::EmulateCycle() {
   opcode = (memory[pc] << 8) | memory[pc + 1];
 
   // Process input before decoding
-  processInput();
+  ProcessInput();
 
   // Decode Instructions
   (this->*opcodeTable[(opcode & 0xF000) >> 12])();
 }
 
-void Chip8::processInput() {
+void Chip8::ProcessInput() {
   keyPressed = -1;
   for (int i = 0; i < 16; i++) {
     if (glfwGetKey(screen->window, virtualKeys[i]) == GLFW_PRESS) {
@@ -184,24 +184,24 @@ void Chip8::op0xxx() {
       }
       stack[sp] = 0;
       pc = stack[--sp] + 2;
-      entry << "Returning to " << Utilities::formatHex(3, pc);
+      entry << "Returning to " << Utilities::FormatHex(3, pc);
       break;
   }
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0x1nnn - Jump to address nnn
 void Chip8::op1xxx() {
   std::stringstream entry;
   pc = opcode & 0x0FFF;
-  entry << Utilities::formatHex(4, opcode) << " JP nnn        |\tSetting PC to: " << Utilities::formatHex(3, pc);
-  screen->pushToLog(entry.str());
+  entry << Utilities::FormatHex(4, opcode) << " JP nnn        |\tSetting PC to: " << Utilities::FormatHex(3, pc);
+  screen->PushToLog(entry.str());
 }
 
 // 0x2nnn - Call function at nnn
 void Chip8::op2xxx() {
   std::stringstream entry;
-  entry << Utilities::formatHex(4, opcode) << " CALL nnn      |\t";
+  entry << Utilities::FormatHex(4, opcode) << " CALL nnn      |\t";
   if (sp >= 16) {
     entry << "Stack Overflow! SP = " << int(sp);
     pc += 2;
@@ -209,15 +209,15 @@ void Chip8::op2xxx() {
   }
   stack[sp++] = pc;
   pc = opcode & 0x0FFF;
-  entry << "Calling function at: " << Utilities::formatHex(3, pc);
-  screen->pushToLog(entry.str());
+  entry << "Calling function at: " << Utilities::FormatHex(3, pc);
+  screen->PushToLog(entry.str());
 }
 
 // 0x3xbb - Skip next instruction if V[x] == bb
 void Chip8::op3xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
-  entry << Utilities::formatHex(4, opcode) << " SE Vx, bb     |\t";
+  entry << Utilities::FormatHex(4, opcode) << " SE Vx, bb     |\t";
   if (V[x] == (opcode & 0x00FF)) {
     pc += 2;
     entry << "Equal, Skipping";
@@ -225,14 +225,14 @@ void Chip8::op3xxx() {
     entry << "Not Equal, Not Skipping";
   }
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0x4xbb - Skip next instruction if V[x] != bb
 void Chip8::op4xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
-  entry << Utilities::formatHex(4, opcode) << " SNE Vx, bb    |\t";
+  entry << Utilities::FormatHex(4, opcode) << " SNE Vx, bb    |\t";
   if (V[x] != (opcode & 0x00FF)) {
     pc += 2;
     entry << "Not Equal, Skipping";
@@ -240,7 +240,7 @@ void Chip8::op4xxx() {
     entry << "Equal, Not Skipping";
   }
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0x5xy0 - Skip next instruction if V[x] == V[y]
@@ -248,7 +248,7 @@ void Chip8::op5xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
-  entry << Utilities::formatHex(4, opcode) << " SE Vx, Vy     |\t";
+  entry << Utilities::FormatHex(4, opcode) << " SE Vx, Vy     |\t";
   if (V[x] == V[y]) {
     pc += 2;
     entry << "Equal, Skipping";
@@ -256,7 +256,7 @@ void Chip8::op5xxx() {
     entry << "Not Equal, Not Skipping";
   }
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0x6xbb - Load bb into V[x]
@@ -264,28 +264,28 @@ void Chip8::op6xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   V[x] = opcode & 0x00FF;
-  entry << Utilities::formatHex(4, opcode) << " LD Vx, bb     |\tLoaded " << int(V[x]) << " into V[" << Utilities::formatHex(1, int(x)) << "]"; 
+  entry << Utilities::FormatHex(4, opcode) << " LD Vx, bb     |\tLoaded " << int(V[x]) << " into V[" << Utilities::FormatHex(1, int(x)) << "]"; 
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0x7xbb - Increment V[x] by bb
 void Chip8::op7xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
-  entry << Utilities::formatHex(4, opcode) << " ADD Vx, bb    |\tIncrementing V[" << Utilities::formatHex(1, int(x)) << "] by " << (opcode & 0x00FF); 
+  entry << Utilities::FormatHex(4, opcode) << " ADD Vx, bb    |\tIncrementing V[" << Utilities::FormatHex(1, int(x)) << "] by " << (opcode & 0x00FF); 
   V[x] += opcode & 0x00FF;
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 void Chip8::op8xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
-  std::string xString = Utilities::formatHex(1, int(x));
-  std::string yString = Utilities::formatHex(1, int(y));
-  std::string opString = Utilities::formatHex(4, opcode);
+  std::string xString = Utilities::FormatHex(1, int(x));
+  std::string yString = Utilities::FormatHex(1, int(y));
+  std::string opString = Utilities::FormatHex(4, opcode);
   switch (opcode & 0x000F) {
     // 0x8xy0 - Load V[y] into V[x]
     case 0x0000:
@@ -364,7 +364,7 @@ void Chip8::op8xxx() {
       pc += 2;
       break;
   }
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0x9xy0 - Skip next instruction if V[x] != V[y]
@@ -372,7 +372,7 @@ void Chip8::op9xxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
   Byte y = (opcode & 0x00F0) >> 4;
-  entry << Utilities::formatHex(4, opcode) << " SNE Vx, Vy    |\t";
+  entry << Utilities::FormatHex(4, opcode) << " SNE Vx, Vy    |\t";
   if (V[x] != V[y]) {
     pc += 2;
     entry << "Not Equal, Skipping";
@@ -380,35 +380,35 @@ void Chip8::op9xxx() {
     entry << "Equal, Not Skipping";
   }
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0xAnnn - Load nnn into I
 void Chip8::opAxxx() {
   std::stringstream entry;
   I = opcode & 0x0FFF;
-  entry << Utilities::formatHex(4, opcode) << " LD I, nnn     |\tLoaded " << Utilities::formatHex(3, I) << " into I";
+  entry << Utilities::FormatHex(4, opcode) << " LD I, nnn     |\tLoaded " << Utilities::FormatHex(3, I) << " into I";
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0xBnnn - Jump to address nnn + V[0]
 void Chip8::opBxxx() {
   std::stringstream entry;
   pc = V[0] + opcode & 0x0FFF;
-  entry << Utilities::formatHex(4, opcode) << " JP V0, addr   |\tSet PC to: " << Utilities::formatHex(3, pc);
-  screen->pushToLog(entry.str());
+  entry << Utilities::FormatHex(4, opcode) << " JP V0, addr   |\tSet PC to: " << Utilities::FormatHex(3, pc);
+  screen->PushToLog(entry.str());
 }
 
 // 0xCxbb - Set V[x] = rand(0, 255) AND bb
 void Chip8::opCxxx() {
   std::stringstream entry;
   Byte x = (opcode & 0x0F00) >> 8;
-  std::string xString = Utilities::formatHex(1, int(x));
+  std::string xString = Utilities::FormatHex(1, int(x));
   V[x] = (rand() % 256) & (opcode & 0x00FF);
-  entry << Utilities::formatHex(4, opcode) << " RND Vx, bb    |\tSetting V[" << xString << "] to " << int(V[x]);
+  entry << Utilities::FormatHex(4, opcode) << " RND Vx, bb    |\tSetting V[" << xString << "] to " << int(V[x]);
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 // 0xDxyn - Draw a sprite of n-bytes high at (V[x], V[y])
@@ -433,9 +433,9 @@ void Chip8::opDxxx() {
       display[index] ^= pixel;
     }
   }
-  entry << Utilities::formatHex(4, opcode) << " DRW Vx, Vy, n |\tDrawing at (" << int(V[x]) << ", " << int(V[y]) << "), height = " << int(height) << "; V[0xF] = " << int(V[0xF]);
+  entry << Utilities::FormatHex(4, opcode) << " DRW Vx, Vy, n |\tDrawing at (" << int(V[x]) << ", " << int(V[y]) << "), height = " << int(height) << "; V[0xF] = " << int(V[0xF]);
   pc += 2;
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 void Chip8::opExxx() {
@@ -445,7 +445,7 @@ void Chip8::opExxx() {
   switch (opcode & 0x00FF) {
     // 0xEx9E - Skip next instruction if the key value of V[x] is pressed
     case 0x009E:
-      entry << Utilities::formatHex(4, opcode) << " SKP Vx        |\t" << Utilities::formatHex(1, int(V[x])) << " pressed? ";
+      entry << Utilities::FormatHex(4, opcode) << " SKP Vx        |\t" << Utilities::FormatHex(1, int(V[x])) << " pressed? ";
       if (key[V[x]]) {
         pc += 2;
         entry << "Yes, skipping";
@@ -456,7 +456,7 @@ void Chip8::opExxx() {
       break;
     // 0xExA1 - Skip next instruction if the key value of V[x] is NOT pressed
     case 0x00A1:
-      entry << Utilities::formatHex(4, opcode) << " SKNP Vx       |\t" << Utilities::formatHex(1, int(V[x])) << " pressed? ";
+      entry << Utilities::FormatHex(4, opcode) << " SKNP Vx       |\t" << Utilities::FormatHex(1, int(V[x])) << " pressed? ";
       if (!key[V[x]]) {
         pc += 2;
         entry << "No, skipping";
@@ -466,7 +466,7 @@ void Chip8::opExxx() {
       pc += 2;
       break;
   }
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 void Chip8::opFxxx() {
@@ -478,72 +478,72 @@ void Chip8::opFxxx() {
     case 0x0007:
       V[x] = delayTimer;
       pc += 2;
-      entry << Utilities::formatHex(4, opcode) << " LD Vx, DT     |\tSetting V[" << Utilities::formatHex(1, int(x)) << "] = " << int(delayTimer);
+      entry << Utilities::FormatHex(4, opcode) << " LD Vx, DT     |\tSetting V[" << Utilities::FormatHex(1, int(x)) << "] = " << int(delayTimer);
       break;
     // 0xFx0A - Wait for input and store the key value in V[x]
     case 0x000A:
-      entry << Utilities::formatHex(4, opcode) << " LD Vx, K      |\tWating for input... ";
+      entry << Utilities::FormatHex(4, opcode) << " LD Vx, K      |\tWating for input... ";
       if (keyPressed < 0) 
         break;
       V[x] = keyPressed;
-      entry << "Key " << Utilities::formatHex(1, V[x]) << " pressed";
+      entry << "Key " << Utilities::FormatHex(1, V[x]) << " pressed";
       pc += 2;
       break;
     // 0xFx15 - Set delayTimer = V[x]
     case 0x0015:
       delayTimer = V[x];
       pc += 2;
-      entry << Utilities::formatHex(4, opcode) << " LD DT, Vx     |\tSetting Delay Timer = " << int(V[x]);
+      entry << Utilities::FormatHex(4, opcode) << " LD DT, Vx     |\tSetting Delay Timer = " << int(V[x]);
       break;
     // 0xFx18 - Set soundTimer = V[x]
     case 0x0018:
       soundTimer = V[x];
       pc += 2;
-      entry << Utilities::formatHex(4, opcode) << " LD ST, Vx     |\tSetting Sound Timer = " << int(V[x]);
+      entry << Utilities::FormatHex(4, opcode) << " LD ST, Vx     |\tSetting Sound Timer = " << int(V[x]);
       break;
     // 0xFx1E - Set I = I + V[x]
     case 0x001E:
       I += V[x];
       pc += 2;
-      entry << Utilities::formatHex(4, opcode) << " ADD I, Vx     |\tI + V[" << Utilities::formatHex(1, int(x)) << "] = " << Utilities::formatHex(3, I);
+      entry << Utilities::FormatHex(4, opcode) << " ADD I, Vx     |\tI + V[" << Utilities::FormatHex(1, int(x)) << "] = " << Utilities::FormatHex(3, I);
       break;
     // 0xFx29 - Set I equal to the memory address of the font-sprite for the value in V[x]
     case 0x0029:
       I = V[x] * 5;
       pc += 2;
-      entry << Utilities::formatHex(4, opcode) << " LD F, Vx      |\t";
+      entry << Utilities::FormatHex(4, opcode) << " LD F, Vx      |\t";
       break;
     // 0xFx33 - Store BCD representation of V[x] at memory locations I, I + 1, I + 2
     case 0x0033:
       memory[I] = V[x] / 100;
       memory[I + 1] = (V[x] % 100) / 10;
       memory[I + 2] = V[x] % 10;
-      entry << Utilities::formatHex(4, opcode) << " LD B, Vx      |\t";
-      entry << "memory[" << Utilities::formatHex(3, I) << "] = "     << int(memory[I])     << "; ";
-      entry << "memory[" << Utilities::formatHex(3, I + 1) << "] = " << int(memory[I + 1]) << "; ";
-      entry << "memory[" << Utilities::formatHex(3, I + 2) << "] = " << int(memory[I + 2]) << "; ";
+      entry << Utilities::FormatHex(4, opcode) << " LD B, Vx      |\t";
+      entry << "memory[" << Utilities::FormatHex(3, I) << "] = "     << int(memory[I])     << "; ";
+      entry << "memory[" << Utilities::FormatHex(3, I + 1) << "] = " << int(memory[I + 1]) << "; ";
+      entry << "memory[" << Utilities::FormatHex(3, I + 2) << "] = " << int(memory[I + 2]) << "; ";
       pc += 2;
       break;
     // 0xFx55 - Store values from registers V[0] to V[x] into memory[I] onwards
     case 0x0055:
-      entry << Utilities::formatHex(4, opcode) << " LD [I], Vx    |\t";
+      entry << Utilities::FormatHex(4, opcode) << " LD [I], Vx    |\t";
       for (int i = 0; i <= x && I + i < MEMORY; i++) {
         memory[I + i] = V[i]; 
-        entry << "memory[" << Utilities::formatHex(3, I + i) << "] = " << int(V[i]) << "; ";
+        entry << "memory[" << Utilities::FormatHex(3, I + i) << "] = " << int(V[i]) << "; ";
       }
       pc += 2;
       break;
     // 0xFx65 - Store values starting from memory[I] into registers V[0] to V[x]
     case 0x0065:
-      entry << Utilities::formatHex(4, opcode) << " LD Vx, [I]    |\t";
+      entry << Utilities::FormatHex(4, opcode) << " LD Vx, [I]    |\t";
       for (int i = 0; i <= x && I + i < MEMORY; i++) {
         V[i] = memory[I + i]; 
-        entry << "V[" << Utilities::formatHex(1, i) << "] = " << int(V[i]) << "; ";
+        entry << "V[" << Utilities::FormatHex(1, i) << "] = " << int(V[i]) << "; ";
       }
       pc += 2;
       break;
   }
-  screen->pushToLog(entry.str());
+  screen->PushToLog(entry.str());
 }
 
 Chip8::~Chip8() {

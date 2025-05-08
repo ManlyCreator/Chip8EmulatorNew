@@ -5,8 +5,7 @@
 // External Libraries
 #include "chip8.h"
 
-// TODO: Debug 0x8xy5 using flags test
-// TODO: Implement delete functions for Chip8, Screen
+// TODO: Load a ROM when selected in the File menu
 
 int main(int argc, char **argv) {
   // ROM Loader
@@ -24,9 +23,9 @@ int main(int argc, char **argv) {
 
   // Chip8
   Chip8 chip8(16, 0);
-  if (!chip8.loadROM(rom))
+  if (!chip8.LoadROM(rom))
     return -1;
-  chip8.startMainLoop();
+  chip8.StartMainLoop();
 
   return 0;
 }

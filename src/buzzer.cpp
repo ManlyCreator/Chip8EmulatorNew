@@ -59,11 +59,11 @@ void checkError() {
   }
 }
 
-void Buzzer::play() {
+void Buzzer::Play() {
   alSourcePlay(source);
 }
 
-void Buzzer::stop() {
+void Buzzer::Stop() {
   alSourceStop(source);
   alSourceRewind(source);
 }

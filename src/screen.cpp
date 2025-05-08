@@ -10,9 +10,12 @@
 #include <ios>
 #include <ostream>
 #include <sstream>
+#include <filesystem>
 #include <vector>
 #include <iomanip>
 #include <algorithm>
+
+namespace fs = std::filesystem;
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 
@@ -61,7 +64,7 @@ Screen::Screen(const char *vsPath, const char *fsPath, Chip8 *chip8) {
   // Texture
   glGenTextures(1, &texture);
   glActiveTexture(GL_TEXTURE0);
-  updateTextureData();
+  UpdateTextureData();
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, DISPLAY_WIDTH, DISPLAY_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData->data());
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -106,7 +109,7 @@ Screen::Screen(const char *vsPath, const char *fsPath, Chip8 *chip8) {
   ImGui_ImplOpenGL3_Init();
 }
 
-void Screen::draw() {
+void Screen::Draw() {
   glfwPollEvents();
 
   ImGui_ImplOpenGL3_NewFrame();
@@ -120,7 +123,7 @@ void Screen::draw() {
   glBindVertexArray(VAO);
   shader->use();
   shader->setInt("texSample", 0);
-  updateTextureData();
+  UpdateTextureData();
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, GL_RGBA, GL_UNSIGNED_BYTE, textureData->data());
   glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -132,7 +135,8 @@ void Screen::draw() {
   glViewport(0, 0, WIDTH, HEIGHT);
   glClear(GL_COLOR_BUFFER_BIT);
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-  debugger();
+  Debugger();
+  MenuBar();
 
   // ImGui Render
   ImGui::Render();
@@ -142,7 +146,7 @@ void Screen::draw() {
   glfwSwapBuffers(window);
 }
 
-void Screen::updateTextureData() {
+void Screen::UpdateTextureData() {
   for (unsigned int i = 0; i < DISPLAY_WIDTH * DISPLAY_HEIGHT; i++) {
     (*textureData)[i * 4]     = chip8->display[i] * 255;
     (*textureData)[i * 4 + 1] = chip8->display[i] * 255;
@@ -151,7 +155,23 @@ void Screen::updateTextureData() {
   }
 }
 
-void Screen::debugger() {
+void Screen::MenuBar() {
+  if (ImGui::BeginMainMenuBar()) {
+    if (ImGui::BeginMenu("File")) {
+      if (ImGui::BeginMenu("Open")) {
+        fs::path path = "../roms/";
+        for (const auto &entry : fs::directory_iterator(path)) {
+          ImGui::MenuItem(entry.path().filename().c_str());
+        }
+        ImGui::EndMenu();
+      }
+      ImGui::EndMenu();
+    }
+    ImGui::EndMainMenuBar();
+  }
+}
+
+void Screen::Debugger() {
   // Debugger Settings
   static int steps = 1;
   static int stepCounter = 0;
@@ -162,7 +182,7 @@ void Screen::debugger() {
   /* Chip8 Screen Window */
   static ImVec2 imageSize(int(WIDTH / 2), int(HEIGHT / 2));
   static ImVec2 screenSize(imageSize.x, imageSize.y + 35);
-  ImGui::SetNextWindowPos(ImVec2(WIDTH - screenSize.x, 0));
+  ImGui::SetNextWindowPos(ImVec2(WIDTH - screenSize.x, 19));
   ImGui::SetNextWindowSize(screenSize);
   ImGui::Begin("Screen");
   ImGui::Image(texture, imageSize);
@@ -171,13 +191,13 @@ void Screen::debugger() {
   /* Chip8 State Window */
   static ImVec2 stateSize(int(screenSize.x / 2), screenSize.y);
   std::stringstream opcodeStream, pcStream, I_Stream, keyStream, delayStream, soundStream, spStream;
-  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+  ImGui::SetNextWindowPos(ImVec2(0.0f, 19.0f));
   ImGui::SetNextWindowSize(stateSize);
   ImGui::Begin("State");
   ImGui::RadioButton("Hex", &toggleHex, 1); ImGui::SameLine();
   ImGui::RadioButton("Decimal", &toggleHex, 0);
   // Initialize Chip8 States as String Streams
-  opcodeStream << "Opcode:        " << Utilities::formatHex(4, chip8->opcode);
+  opcodeStream << "Opcode:        " << Utilities::FormatHex(4, chip8->opcode);
   pcStream     << "PC:            ";
   I_Stream     << "I:             ";
   keyStream    << "Key:           ";
@@ -186,12 +206,12 @@ void Screen::debugger() {
   spStream     << "Stack Pointer: ";
   // Formats state information depending on user selection
   if (toggleHex) {
-    pcStream    << Utilities::formatHex(3, chip8->pc);
-    I_Stream    << Utilities::formatHex(3, chip8->I);
-    keyStream   << Utilities::formatHex(1, int(chip8->keyPressed));
-    delayStream << Utilities::formatHex(2, int(chip8->delayTimer));
-    soundStream << Utilities::formatHex(2, int(chip8->soundTimer));
-    spStream    << Utilities::formatHex(2, int(chip8->sp));
+    pcStream    << Utilities::FormatHex(3, chip8->pc);
+    I_Stream    << Utilities::FormatHex(3, chip8->I);
+    keyStream   << Utilities::FormatHex(1, int(chip8->keyPressed));
+    delayStream << Utilities::FormatHex(2, int(chip8->delayTimer));
+    soundStream << Utilities::FormatHex(2, int(chip8->soundTimer));
+    spStream    << Utilities::FormatHex(2, int(chip8->sp));
   }
   else {
     pcStream    << chip8->pc;
@@ -256,7 +276,7 @@ void Screen::debugger() {
   static int jumpAddress = 0; 
   static bool jumped = false;
   static ImVec2 controlsSize = stateSize;
-  ImGui::SetNextWindowPos(ImVec2(screenSize.x - controlsSize.x, 0.0f));
+  ImGui::SetNextWindowPos(ImVec2(screenSize.x - controlsSize.x, 19.0f));
   ImGui::SetNextWindowSize(controlsSize);
   ImGui::Begin("Controls");
   ImGui::PushItemWidth(100.0f);
@@ -279,7 +299,7 @@ void Screen::debugger() {
           chip8->soundTimer = chip8->soundTimer > 0 ? chip8->soundTimer - 1 : 0;
           chip8->delayTimer = chip8->delayTimer > 0 ? chip8->delayTimer - 1 : 0;
         }
-        chip8->emulateCycle();
+        chip8->EmulateCycle();
         stepCounter++;
       }
     }
@@ -343,8 +363,8 @@ void Screen::debugger() {
   ImGui::End();
 }
 
-void Screen::pushToLog(std::string entry) {
-  std::cout << entry << "\n";
+void Screen::PushToLog(std::string entry) {
+  /*std::cout << entry << "\n";*/
   int size = debugLog.size();
   if (size < 100) {
     debugLog.push_back(entry);

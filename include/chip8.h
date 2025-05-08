@@ -66,10 +66,10 @@ class Chip8 {
     float lastTime, currentTime, elapsedTime, deltaTime;
 
     // Functions
-    void tick();
-    void emulateCycle();
-    void processInput();
-    void updateTimers();
+    void Tick();
+    void EmulateCycle();
+    void ProcessInput();
+    void UpdateTimers();
     void op0xxx();
     void op1xxx();
     void op2xxx();
@@ -93,12 +93,8 @@ class Chip8 {
   public:
     Chip8(Byte instructionFrequency, Byte debugFlag);
     ~Chip8();
-    int loadROM(const char *romPath);
-    void startMainLoop();
+    int LoadROM(const char *romPath);
+    void StartMainLoop();
 };
-
-void chipStartMainLoop(Chip8 *chip8, unsigned instructionFrequency);
-void chipTick(Chip8 *chip8, int steps);
-void chipProcessInput(Chip8 *chip8);
 
 #endif
