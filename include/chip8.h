@@ -66,6 +66,7 @@ class Chip8 {
     float lastTime, currentTime, elapsedTime, deltaTime;
 
     // Functions
+    void Reset();
     void Tick();
     void EmulateCycle();
     void ProcessInput();

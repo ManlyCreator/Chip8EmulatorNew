@@ -53,6 +53,12 @@ Byte fontset[80] = {
 Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
   this->instructionFrequency = instructionFrequency;
   this->debugFlag = debugFlag;
+  Reset();
+  screen = std::make_unique<Screen>("../vertexShader.glsl", "../fragmentShader.glsl", this);
+  buzzer = std::make_unique<Buzzer>();
+}
+
+void Chip8::Reset() {
   I  = 0;
   pc = 0x200;
   sp = 0;
@@ -72,14 +78,14 @@ Chip8::Chip8(Byte instructionFrequency, Byte debugFlag) {
     memory[i] = fontset[i];
   }
   std::fill(display, display + (DISPLAY_WIDTH * DISPLAY_HEIGHT), 0);
-  screen = std::make_unique<Screen>("../vertexShader.glsl", "../fragmentShader.glsl", this);
-  buzzer = std::make_unique<Buzzer>();
 }
 
 int Chip8::LoadROM(const char *romPath) {
   Byte *buffer;
   std::size_t bufferSize;
   std::ifstream rom(romPath, std::ios::binary | std::ios::ate);
+
+  Reset();
 
   if (!rom.is_open())
     return 0;

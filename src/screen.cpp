@@ -161,7 +161,12 @@ void Screen::MenuBar() {
       if (ImGui::BeginMenu("Open")) {
         fs::path path = "../roms/";
         for (const auto &entry : fs::directory_iterator(path)) {
-          ImGui::MenuItem(entry.path().filename().c_str());
+          std::stringstream filePath;
+          std::string fileName = entry.path().filename();
+          filePath << path.c_str() << fileName;
+          if (ImGui::MenuItem(fileName.c_str())) {
+            chip8->LoadROM(filePath.str().c_str()); 
+          }
         }
         ImGui::EndMenu();
       }
